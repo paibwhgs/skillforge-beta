@@ -23,7 +23,7 @@
 ### 1. 获取 API Keys
 
 - **Turso**: https://app.turso.tech 创建数据库，获取 URL 和 Token
-- **DeepSeek**: https://platform.deepseek.com 创建 API Key
+- **DeepSeek**: https://platform.deepseek.com 创建 API Key（任意api都可以）
 - **Tavily**: https://app.tavily.com 注册获取 API Key（免费每月 1000 次搜索）
 
 ### 2. 配置环境变量
@@ -46,7 +46,8 @@ npm install
 npm run dev
 ```
 
-打开 http://localhost:3000，输入领域描述，开始生成。
+打开 http://localhost:3000
+输入领域描述，开始生成。
 
 ## API
 
