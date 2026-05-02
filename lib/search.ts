@@ -13,6 +13,7 @@ function parseSearchResults(text: string): DashscopeSearchItem[] {
   try {
     const parsed = JSON.parse(text);
     if (Array.isArray(parsed)) return parsed.map(normalizeItem);
+    if (parsed.pages) return parsed.pages.map(normalizeItem);
     if (parsed.items) return parsed.items.map(normalizeItem);
     if (parsed.results) return parsed.results.map(normalizeItem);
     if (parsed.entries) return parsed.entries.map(normalizeItem);
@@ -54,6 +55,11 @@ function normalizeItem(item: any): DashscopeSearchItem {
     score: item.score ?? item.relevance ?? 0,
   };
 }
+
+const LOW_QUALITY_DOMAINS = [
+  'blog.csdn.net', 'csdn.net',
+  'toutiao.com', 'web.toutiao.com',
+];
 
 export async function dashscopeSearch(
   query: string,
@@ -136,10 +142,10 @@ export async function multiSearch(
   const deduped: SearchResult[] = [];
   for (const r of merged) {
     const key = r.url;
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduped.push(r);
-    }
+    if (seen.has(key)) continue;
+    if (LOW_QUALITY_DOMAINS.some((d) => key.includes(d))) continue;
+    seen.add(key);
+    deduped.push(r);
   }
 
   const level = deduped.length >= 3 ? 'rich' : deduped.length > 0 ? 'sparse' : 'none';
