@@ -1,45 +1,104 @@
-import type { SearchResult } from "@/types";
+import type { SearchResult } from '@/types';
 
-const TAVILY_BASE = "https://api.tavily.com/search";
+const DASHSCOPE_MCP_URL = 'https://dashscope.aliyuncs.com/api/v1/mcps/WebSearch/mcp';
 
-interface TavilyResult {
+interface DashscopeSearchItem {
   title: string;
   url: string;
   content: string;
   score: number;
 }
 
-export async function tavilySearch(
-  query: string,
-  depth: "basic" | "advanced" = "basic"
-): Promise<TavilyResult[]> {
-  const apiKey = process.env.TAVILY_API_KEY;
-  if (!apiKey) throw new Error("TAVILY_API_KEY not configured");
+function parseSearchResults(text: string): DashscopeSearchItem[] {
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) return parsed.map(normalizeItem);
+    if (parsed.items) return parsed.items.map(normalizeItem);
+    if (parsed.results) return parsed.results.map(normalizeItem);
+    if (parsed.entries) return parsed.entries.map(normalizeItem);
+  } catch {
+    // not JSON, try line-by-line extraction below
+  }
 
-  const res = await fetch(TAVILY_BASE, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const results: DashscopeSearchItem[] = [];
+  const lines = text.split('\n');
+  let current: Partial<DashscopeSearchItem> = {};
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (current.title || current.url) {
+        results.push({ title: '', url: '', content: '', score: 0, ...current });
+        current = {};
+      }
+      continue;
+    }
+    if (!current.title && !trimmed.startsWith('http')) {
+      current.title = trimmed.replace(/^\d+[.、．]\s*/, '');
+    } else if (trimmed.match(/^https?:\/\//)) {
+      current.url = trimmed;
+    } else if (current.title && trimmed.length > 10) {
+      current.content = (current.content || '') + trimmed + ' ';
+    }
+  }
+  if (current.title || current.url) {
+    results.push({ title: '', url: '', content: '', score: 0, ...current });
+  }
+  return results;
+}
+
+function normalizeItem(item: any): DashscopeSearchItem {
+  return {
+    title: item.title || '',
+    url: item.url || item.link || '',
+    content: item.content || item.snippet || item.description || '',
+    score: item.score ?? item.relevance ?? 0,
+  };
+}
+
+export async function dashscopeSearch(
+  query: string,
+  maxResults: number = 5,
+): Promise<DashscopeSearchItem[]> {
+  const apiKey = process.env.DASHSCOPE_API_KEY;
+  if (!apiKey) throw new Error('DASHSCOPE_API_KEY not configured');
+
+  const res = await fetch(DASHSCOPE_MCP_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
     body: JSON.stringify({
-      api_key: apiKey,
-      query,
-      search_depth: depth,
-      max_results: depth === "advanced" ? 10 : 5,
-      include_answer: false,
+      jsonrpc: '2.0',
+      id: Date.now().toString(),
+      method: 'tools/call',
+      params: {
+        name: 'bailian_web_search',
+        arguments: {
+          query,
+          count: maxResults,
+        },
+      },
     }),
   });
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Tavily API error (${res.status}): ${text}`);
+    throw new Error(`Dashscope API error (${res.status}): ${text}`);
   }
 
   const json = await res.json();
-  return (json.results || []).map((r: any) => ({
-    title: r.title || "",
-    url: r.url || "",
-    content: r.content || "",
-    score: r.score || 0,
-  }));
+  if (json.error) {
+    throw new Error(`Dashscope MCP error: ${json.error.message || JSON.stringify(json.error)}`);
+  }
+
+  const content = json.result?.content || [];
+  const allTexts = content
+    .filter((c: any) => c.type === 'text')
+    .map((c: any) => c.text)
+    .join('\n');
+
+  return parseSearchResults(allTexts).slice(0, maxResults);
 }
 
 export function genQueries(domain: string): string[] {
@@ -62,18 +121,15 @@ export function genQueries(domain: string): string[] {
 
 export async function multiSearch(
   domain: string,
-  depth: "quick" | "deep"
-): Promise<{ results: SearchResult[]; level: "rich" | "sparse" | "none" }> {
+  depth: 'quick' | 'deep',
+): Promise<{ results: SearchResult[]; level: 'rich' | 'sparse' | 'none' }> {
   const queries = genQueries(domain);
-  const tavilyDepth = depth === "deep" ? "advanced" : "basic";
+  const maxResults = depth === 'deep' ? 10 : 5;
+  const allResults = await Promise.allSettled(queries.map((q) => dashscopeSearch(q, maxResults)));
 
-  const allResults = await Promise.allSettled(
-    queries.map((q) => tavilySearch(q, tavilyDepth))
-  );
-
-  const merged: TavilyResult[] = [];
+  const merged: DashscopeSearchItem[] = [];
   for (const r of allResults) {
-    if (r.status === "fulfilled") merged.push(...r.value);
+    if (r.status === 'fulfilled') merged.push(...r.value);
   }
 
   const seen = new Set<string>();
@@ -86,6 +142,6 @@ export async function multiSearch(
     }
   }
 
-  const level = deduped.length >= 3 ? "rich" : deduped.length > 0 ? "sparse" : "none";
+  const level = deduped.length >= 3 ? 'rich' : deduped.length > 0 ? 'sparse' : 'none';
   return { results: deduped, level };
 }
