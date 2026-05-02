@@ -1,15 +1,49 @@
 import type { SearchResult } from '@/types';
 
+const TAVILY_BASE = 'https://api.tavily.com/search';
 const DASHSCOPE_MCP_URL = 'https://dashscope.aliyuncs.com/api/v1/mcps/WebSearch/mcp';
 
-interface DashscopeSearchItem {
+interface RawResult {
   title: string;
   url: string;
   content: string;
   score: number;
 }
 
-function parseSearchResults(text: string): DashscopeSearchItem[] {
+// ── Tavily ──────────────────────────────────────────
+
+export async function tavilySearch(
+  query: string,
+  depth: 'basic' | 'advanced' = 'basic',
+): Promise<RawResult[]> {
+  const apiKey = process.env.TAVILY_API_KEY;
+  if (!apiKey) return [];
+
+  const res = await fetch(TAVILY_BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      api_key: apiKey,
+      query,
+      search_depth: depth,
+      max_results: depth === 'advanced' ? 10 : 5,
+      include_answer: false,
+    }),
+  });
+
+  if (!res.ok) return [];
+  const json = await res.json();
+  return (json.results || []).map((r: any) => ({
+    title: r.title || '',
+    url: r.url || '',
+    content: r.content || '',
+    score: r.score || 0,
+  }));
+}
+
+// ── Dashscope / 百炼 ────────────────────────────────
+
+function parseDashscopeResult(text: string): RawResult[] {
   try {
     const parsed = JSON.parse(text);
     if (Array.isArray(parsed)) return parsed.map(normalizeItem);
@@ -18,12 +52,12 @@ function parseSearchResults(text: string): DashscopeSearchItem[] {
     if (parsed.results) return parsed.results.map(normalizeItem);
     if (parsed.entries) return parsed.entries.map(normalizeItem);
   } catch {
-    // not JSON, try line-by-line extraction below
+    // fall through to text extraction
   }
 
-  const results: DashscopeSearchItem[] = [];
+  const results: RawResult[] = [];
   const lines = text.split('\n');
-  let current: Partial<DashscopeSearchItem> = {};
+  let current: Partial<RawResult> = {};
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) {
@@ -47,7 +81,7 @@ function parseSearchResults(text: string): DashscopeSearchItem[] {
   return results;
 }
 
-function normalizeItem(item: any): DashscopeSearchItem {
+function normalizeItem(item: any): RawResult {
   return {
     title: item.title || '',
     url: item.url || item.link || '',
@@ -64,9 +98,9 @@ const LOW_QUALITY_DOMAINS = [
 export async function dashscopeSearch(
   query: string,
   maxResults: number = 5,
-): Promise<DashscopeSearchItem[]> {
+): Promise<RawResult[]> {
   const apiKey = process.env.DASHSCOPE_API_KEY;
-  if (!apiKey) throw new Error('DASHSCOPE_API_KEY not configured');
+  if (!apiKey) return [];
 
   const res = await fetch(DASHSCOPE_MCP_URL, {
     method: 'POST',
@@ -80,23 +114,14 @@ export async function dashscopeSearch(
       method: 'tools/call',
       params: {
         name: 'bailian_web_search',
-        arguments: {
-          query,
-          count: maxResults,
-        },
+        arguments: { query, count: maxResults },
       },
     }),
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Dashscope API error (${res.status}): ${text}`);
-  }
-
+  if (!res.ok) return [];
   const json = await res.json();
-  if (json.error) {
-    throw new Error(`Dashscope MCP error: ${json.error.message || JSON.stringify(json.error)}`);
-  }
+  if (json.error) return [];
 
   const content = json.result?.content || [];
   const allTexts = content
@@ -104,8 +129,10 @@ export async function dashscopeSearch(
     .map((c: any) => c.text)
     .join('\n');
 
-  return parseSearchResults(allTexts).slice(0, maxResults);
+  return parseDashscopeResult(allTexts).slice(0, maxResults);
 }
+
+// ── Queries ─────────────────────────────────────────
 
 export function genQueries(domain: string): string[] {
   const queries: string[] = [
@@ -125,29 +152,62 @@ export function genQueries(domain: string): string[] {
   return queries.slice(0, 5);
 }
 
+// ── Multi-search ────────────────────────────────────
+
+function isGoodSource(url: string): boolean {
+  return !LOW_QUALITY_DOMAINS.some((d) => url.includes(d));
+}
+
+function mergeResults(...batches: RawResult[][]): SearchResult[] {
+  const seen = new Set<string>();
+  const out: SearchResult[] = [];
+  for (const batch of batches) {
+    for (const r of batch) {
+      if (!seen.has(r.url) && isGoodSource(r.url)) {
+        seen.add(r.url);
+        out.push(r);
+      }
+    }
+  }
+  return out;
+}
+
 export async function multiSearch(
   domain: string,
   depth: 'quick' | 'deep',
 ): Promise<{ results: SearchResult[]; level: 'rich' | 'sparse' | 'none' }> {
   const queries = genQueries(domain);
   const maxResults = depth === 'deep' ? 10 : 5;
-  const allResults = await Promise.allSettled(queries.map((q) => dashscopeSearch(q, maxResults)));
+  const tavilyDepth = depth === 'deep' ? 'advanced' : 'basic';
 
-  const merged: DashscopeSearchItem[] = [];
-  for (const r of allResults) {
-    if (r.status === 'fulfilled') merged.push(...r.value);
-  }
+  // Run both search engines in parallel
+  const [tavilyBatch, dashBatch] = await Promise.all([
+    // Tavily: 5 queries merged into one batch
+    (async () => {
+      const results = await Promise.allSettled(
+        queries.map((q) => tavilySearch(q, tavilyDepth)),
+      );
+      const all: RawResult[] = [];
+      for (const r of results) {
+        if (r.status === 'fulfilled') all.push(...r.value);
+      }
+      return all;
+    })(),
+    // Dashscope: 5 queries merged into one batch
+    (async () => {
+      const results = await Promise.allSettled(
+        queries.map((q) => dashscopeSearch(q, maxResults)),
+      );
+      const all: RawResult[] = [];
+      for (const r of results) {
+        if (r.status === 'fulfilled') all.push(...r.value);
+      }
+      return all;
+    })(),
+  ]);
 
-  const seen = new Set<string>();
-  const deduped: SearchResult[] = [];
-  for (const r of merged) {
-    const key = r.url;
-    if (seen.has(key)) continue;
-    if (LOW_QUALITY_DOMAINS.some((d) => key.includes(d))) continue;
-    seen.add(key);
-    deduped.push(r);
-  }
-
+  const deduped = mergeResults(tavilyBatch, dashBatch);
   const level = deduped.length >= 3 ? 'rich' : deduped.length > 0 ? 'sparse' : 'none';
+
   return { results: deduped, level };
 }
