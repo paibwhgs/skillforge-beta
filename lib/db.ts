@@ -23,6 +23,7 @@ function rowToSkill(r: Row): SkillRecord {
     rating: Number(r.rating),
     feedback: String(r.feedback || ''),
     depth: String(r.depth),
+    mode: String(r.mode || 'auto'),
     created_at: String(r.created_at),
   };
 }
@@ -85,9 +86,20 @@ export async function initDB() {
   `);
   await c.execute('CREATE INDEX IF NOT EXISTS idx_skill_sources ON skill_sources(skill_id)');
   await c.execute('CREATE INDEX IF NOT EXISTS idx_skills_domain ON skills(domain)');
+  await c.execute(`
+    CREATE TABLE IF NOT EXISTS skill_chat_messages (
+      id TEXT PRIMARY KEY,
+      skill_id TEXT NOT NULL,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  await c.execute('CREATE INDEX IF NOT EXISTS idx_chat_skill ON skill_chat_messages(skill_id)');
   // Migrate existing tables — add columns that may not exist yet
   for (const stmt of [
     "ALTER TABLE skills ADD COLUMN user_id TEXT DEFAULT ''",
+    "ALTER TABLE skills ADD COLUMN mode TEXT DEFAULT 'auto'",
   ]) {
     try { await c.execute(stmt); } catch { /* column may already exist */ }
   }
@@ -100,12 +112,13 @@ export async function insertSkill(
   content: string,
   depth: string = 'quick',
   userId?: string,
+  mode: string = 'auto',
 ): Promise<string> {
   const c = getDb();
   const id = uuid();
   await c.execute({
-    sql: 'INSERT INTO skills (id, title, domain, format, content, depth, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    args: [id, title, domain, format, content, depth, userId || ''],
+    sql: 'INSERT INTO skills (id, title, domain, format, content, depth, user_id, mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [id, title, domain, format, content, depth, userId || '', mode],
   });
   return id;
 }
@@ -202,6 +215,31 @@ export async function getSkillsByUser(userId: string, limit: number = 20): Promi
     args: [userId, limit],
   });
   return rows.rows.map(rowToSkill);
+}
+
+export async function deleteSkill(id: string): Promise<boolean> {
+  const c = getDb();
+  await c.execute({ sql: 'DELETE FROM skill_sources WHERE skill_id = ?', args: [id] });
+  await c.execute({ sql: 'DELETE FROM skill_chat_messages WHERE skill_id = ?', args: [id] });
+  const result = await c.execute({ sql: 'DELETE FROM skills WHERE id = ?', args: [id] });
+  return result.rowsAffected > 0;
+}
+
+export async function getChatMessages(skillId: string): Promise<{ role: string; content: string }[]> {
+  const c = getDb();
+  const rows = await c.execute({
+    sql: 'SELECT role, content FROM skill_chat_messages WHERE skill_id = ? ORDER BY created_at ASC',
+    args: [skillId],
+  });
+  return rows.rows.map((r) => ({ role: String(r.role), content: String(r.content) }));
+}
+
+export async function saveChatMessage(skillId: string, role: string, content: string): Promise<void> {
+  const c = getDb();
+  await c.execute({
+    sql: 'INSERT INTO skill_chat_messages (id, skill_id, role, content) VALUES (?, ?, ?, ?)',
+    args: [uuid(), skillId, role, content],
+  });
 }
 
 export async function updateSkillContent(id: string, content: string): Promise<boolean> {

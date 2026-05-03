@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useAuth } from './AuthProvider';
+import { MODEL_OPTIONS, DEFAULT_MODEL } from '@/types';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -13,15 +13,37 @@ interface Props {
   onContentUpdate: (content: string) => void;
 }
 
+// Strip ~~~skill-content blocks from assistant messages for cleaner display
+function stripContentBlock(text: string): string {
+  return text.replace(/~~~skill-content\n?[\s\S]*?\n?~~~/g, '').trim();
+}
+
 export function ChatPanel({ skillId, onContentUpdate }: Props) {
-  const { user } = useAuth();
-  const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState('');
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL);
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const loadedRef = useRef(false);
+
+  useEffect(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+    fetch(`/api/v1/chat?skillId=${skillId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.messages?.length) {
+          const clean = data.messages.map((m: { role: string; content: string }) => ({
+            ...m,
+            content: m.role === 'assistant' ? stripContentBlock(m.content) : m.content,
+          }));
+          setMessages(clean);
+        }
+      })
+      .catch(() => {});
+  }, [skillId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -42,13 +64,20 @@ export function ChatPanel({ skillId, onContentUpdate }: Props) {
     abortRef.current = abortController;
 
     try {
+      // Send history with content blocks stripped to keep context lean
+      const cleanHistory = messages.map((m) => ({
+        role: m.role,
+        content: stripContentBlock(m.content),
+      }));
       const res = await fetch('/api/v1/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           skillId,
           message: text,
-          history: messages.map((m) => ({ role: m.role, content: m.content })),
+          history: cleanHistory,
+          engine: selectedModel.engine,
+          model: selectedModel.model,
         }),
         signal: abortController.signal,
       });
@@ -72,11 +101,6 @@ export function ChatPanel({ skillId, onContentUpdate }: Props) {
         const lines = chunk.split('\n').filter((l) => l.trim());
 
         for (const line of lines) {
-          if (line.startsWith('event: ')) {
-            const eventType = line.slice(7);
-            // next line is data
-            continue;
-          }
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
@@ -112,92 +136,113 @@ export function ChatPanel({ skillId, onContentUpdate }: Props) {
     setStreaming(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.metaKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 bg-blue-600 text-white rounded-full px-4 py-3 shadow-lg hover:bg-blue-700 transition text-sm z-50 flex items-center gap-2"
-      >
-        <span>💬</span>
-        <span>AI 对话</span>
-      </button>
-    );
-  }
-
   return (
-    <div className="fixed bottom-0 right-0 w-full sm:w-96 h-96 sm:h-[500px] sm:m-4 sm:rounded-xl bg-white border shadow-xl flex flex-col z-50 sm:bottom-0 sm:right-0">
+    <div className="h-full flex flex-col bg-zinc-950/50 border border-zinc-900 rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-        <span className="text-sm font-medium">AI 对话修改</span>
-        <button
-          onClick={() => setOpen(false)}
-          className="text-gray-400 hover:text-gray-600 text-sm"
-        >
-          关闭
-        </button>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-900 bg-zinc-950/80 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="text-xs font-bold text-zinc-300 uppercase tracking-widest">
+            Forge AI 助手
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Model Selector */}
+          <select
+            value={`${selectedModel.engine}:${selectedModel.model}`}
+            onChange={(e) => {
+              const [eng, mod] = e.target.value.split(':');
+              const found = MODEL_OPTIONS.find((o) => o.engine === eng && o.model === mod);
+              if (found) setSelectedModel(found);
+            }}
+            className="bg-black border border-zinc-800 text-zinc-400 text-[10px] px-2 py-1 rounded appearance-none cursor-pointer hover:border-zinc-700 focus:outline-none focus:border-[#FF5C00]/50 transition-colors"
+          >
+            {MODEL_OPTIONS.map((opt) => (
+              <option key={opt.label} value={`${opt.engine}:${opt.model}`}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          <span className="text-[10px] text-zinc-600">会话记录</span>
+        </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
         {messages.length === 0 && !streaming && (
-          <div className="text-center text-gray-400 text-xs mt-8">
-            输入你的需求，AI 会帮你修改 skill 内容
+          <div className="text-center text-zinc-600 text-xs mt-12">
+            <span className="material-symbols-outlined text-3xl mb-3 block text-zinc-800">psychology</span>
+            <p>输入你的需求，AI 会帮你修改 skill 内容</p>
+            <p className="text-zinc-700 mt-1">支持修改格式、补充细节、调整语气等</p>
           </div>
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+              className={`max-w-[90%] rounded-xl px-4 py-3 text-sm whitespace-pre-wrap leading-relaxed ${
                 msg.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-800'
+                  ? 'bg-[#FF5C00] text-white rounded-br-md'
+                  : 'bg-zinc-900/80 text-zinc-300 rounded-bl-md border border-zinc-800/50'
               }`}
             >
-              {msg.content || (streaming && i === messages.length - 1 ? '...' : '')}
+              {msg.role === 'assistant' ? (
+                stripContentBlock(msg.content) || (
+                  streaming && i === messages.length - 1 ? (
+                    <span className="inline-flex gap-1">
+                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 bg-zinc-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </span>
+                  ) : ''
+                )
+              ) : (
+                msg.content
+              )}
             </div>
           </div>
         ))}
         {error && (
-          <div className="text-center text-red-500 text-xs">{error}</div>
+          <div className="text-center text-red-400 text-xs bg-red-900/20 py-2 px-4 rounded-lg">{error}</div>
         )}
         <div ref={bottomRef} />
       </div>
 
       {/* Input */}
-      <div className="border-t p-3 shrink-0">
-        <div className="flex gap-2">
+      <div className="border-t border-zinc-900 p-3 bg-zinc-950/80 shrink-0">
+        <div className="flex items-center gap-3 bg-black/60 border border-zinc-800 rounded-xl px-4 py-2 focus-within:border-[#FF5C00]/50 transition-colors">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="输入修改需求... (⌘+Enter 发送)"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && e.metaKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+            placeholder="输入修改建议，或直接提问..."
             disabled={streaming}
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+            className="flex-1 bg-transparent border-none focus:outline-none text-sm text-white placeholder-zinc-600 disabled:opacity-50 py-1"
           />
           {streaming ? (
             <button
               onClick={stopGeneration}
-              className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm"
+              className="bg-red-900/50 hover:bg-red-800/50 text-red-400 w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0"
+              title="停止生成"
             >
-              停止
+              <span className="material-symbols-outlined text-lg">stop</span>
             </button>
           ) : (
             <button
               onClick={sendMessage}
               disabled={!input.trim()}
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-3 py-2 rounded-lg text-sm"
+              className="bg-[#FF5C00] text-white w-8 h-8 rounded-lg flex items-center justify-center hover:scale-105 transition-transform active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+              title="发送 (⌘+Enter)"
             >
-              发送
+              <span className="material-symbols-outlined text-lg">send</span>
             </button>
           )}
         </div>
+        <p className="text-[10px] text-zinc-700 mt-1.5 text-center">⌘+Enter 发送 · AI 回复可自动更新 skill 内容</p>
       </div>
     </div>
   );

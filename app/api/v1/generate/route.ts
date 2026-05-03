@@ -31,17 +31,19 @@ export async function POST(request: NextRequest) {
 
   const depth = body.depth || 'quick';
   const mode = body.mode || 'auto';
+  const engine = body.engine;
+  const model = body.model;
 
   // Phase 1: Search (skip in direct mode)
   let results: any[] = [];
   let level: 'rich' | 'sparse' | 'none' = 'none';
 
   if (mode === 'direct') {
-    const rawContent = await directGenerate(domain);
+    const rawContent = await directGenerate(domain, engine, model);
     const content = formatSkill(rawContent, format);
     const title = extractTitle(content);
     const userId = getUserId(request);
-    const id = await insertSkill(title, domain, format, content, depth, userId || undefined);
+    const id = await insertSkill(title, domain, format, content, depth, userId || undefined, mode);
 
     return NextResponse.json({
       success: true,
@@ -64,7 +66,7 @@ export async function POST(request: NextRequest) {
   level = searchResults.level;
 
   // Phase 2: Curate
-  const rawContent = await curate(domain, results, level);
+  const rawContent = await curate(domain, results, level, engine, model);
 
   // Phase 3: Format
   const content = formatSkill(rawContent, format);
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest) {
 
   // Save to DB
   const userId = getUserId(request);
-  const id = await insertSkill(title, domain, format, content, depth, userId || undefined);
+  const id = await insertSkill(title, domain, format, content, depth, userId || undefined, mode);
   await insertSources(
     id,
     results.map((r) => ({ title: r.title, url: r.url })),

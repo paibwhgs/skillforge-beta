@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(Number(searchParams.get('limit')) || 20, 100);
 
   const userId = getUserId(request);
-  const records = userId ? await getSkillsByUser(userId, limit) : await getSkills(limit);
+  const records = userId ? await getSkillsByUser(userId, limit) : [];
 
   return NextResponse.json({ skills: records });
 }

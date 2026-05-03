@@ -1,8 +1,20 @@
 import { NextRequest } from 'next/server';
-import { initDB, getSkill, updateSkillContent } from '@/lib/db';
+import { initDB, getSkill, updateSkillContent, getChatMessages, saveChatMessage } from '@/lib/db';
 import { getUserId } from '@/lib/auth';
+import { chatStream, chatStreamOpenCodeGo } from '@/lib/llm-stream';
 
-const DEEPSEEK_BASE = 'https://api.deepseek.com/v1';
+export async function GET(request: NextRequest) {
+  await initDB();
+  const { searchParams } = new URL(request.url);
+  const skillId = searchParams.get('skillId');
+  if (!skillId) {
+    return new Response(JSON.stringify({ error: 'skillId required' }), { status: 400 });
+  }
+  const messages = await getChatMessages(skillId);
+  return new Response(JSON.stringify({ messages }), {
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 export async function POST(request: NextRequest) {
   await initDB();
@@ -12,7 +24,7 @@ export async function POST(request: NextRequest) {
     return new Response(JSON.stringify({ error: '请先登录' }), { status: 401 });
   }
 
-  let body: { skillId?: string; message?: string; history?: { role: string; content: string }[] };
+  let body: { skillId?: string; message?: string; history?: { role: string; content: string }[]; engine?: string; model?: string };
   try {
     body = await request.json();
   } catch {
@@ -20,6 +32,9 @@ export async function POST(request: NextRequest) {
   }
 
   const { skillId, message, history = [] } = body;
+  const engine = body.engine || 'deepseek';
+  const model = body.model || 'deepseek-chat';
+
   if (!skillId || !message) {
     return new Response(JSON.stringify({ error: 'skillId and message required' }), { status: 400 });
   }
@@ -27,11 +42,6 @@ export async function POST(request: NextRequest) {
   const skill = await getSkill(skillId);
   if (!skill) {
     return new Response(JSON.stringify({ error: 'Skill not found' }), { status: 404 });
-  }
-
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: 'DeepSeek API not configured' }), { status: 500 });
   }
 
   const systemPrompt = `你是一个帮助用户修改 skill 文档的 AI 助手。Skill 文档是 Markdown 格式，包含特定领域的结构化知识。
@@ -56,64 +66,27 @@ ${skill.content}
     { role: 'user', content: message },
   ];
 
-  const deepseekRes = await fetch(`${DEEPSEEK_BASE}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages,
-      temperature: 0.7,
-      max_tokens: 8192,
-      stream: true,
-    }),
-  });
-
-  if (!deepseekRes.ok) {
-    const text = await deepseekRes.text();
-    return new Response(JSON.stringify({ error: `DeepSeek error: ${text}` }), { status: 502 });
-  }
-
   const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-
   let fullContent = '';
   let skillContentUpdated = false;
 
   const stream = new ReadableStream({
     async start(controller) {
-      const reader = deepseekRes.body!.getReader();
-
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        const llmStream = engine === 'opencode-go'
+          ? chatStreamOpenCodeGo({ system: systemPrompt, user: message, temperature: 0.7, maxTokens: 8192, messages, model })
+          : chatStream({ system: systemPrompt, user: message, temperature: 0.7, maxTokens: 8192, messages });
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n').filter((l) => l.trim());
-
-          for (const line of lines) {
-            if (!line.startsWith('data: ')) continue;
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-
-            try {
-              const parsed = JSON.parse(data);
-              const delta = parsed.choices?.[0]?.delta?.content;
-              if (!delta) continue;
-
-              fullContent += delta;
-
-              controller.enqueue(
-                encoder.encode(`event: token\ndata: ${JSON.stringify({ text: delta })}\n\n`),
-              );
-            } catch {
-              // skip unparseable chunks
-            }
-          }
+        for await (const token of llmStream) {
+          fullContent += token;
+          controller.enqueue(
+            encoder.encode(`event: token\ndata: ${JSON.stringify({ text: token })}\n\n`),
+          );
         }
+
+        // Save messages to chat history
+        await saveChatMessage(skillId, 'user', message);
+        await saveChatMessage(skillId, 'assistant', fullContent);
 
         // After stream ends, detect skill-content block
         const match = fullContent.match(/~~~skill-content\n?([\s\S]*?)\n?~~~/);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { StarRating } from './StarRating';
 
 interface Props {
   skillId: string;
@@ -8,13 +9,15 @@ interface Props {
 
 export function FeedbackBar({ skillId }: Props) {
   const [submitted, setSubmitted] = useState(false);
+  const [rating, setRating] = useState(0);
 
-  const sendFeedback = async (rating: 1 | -1) => {
+  const sendFeedback = async (r: number) => {
+    setRating(r);
     try {
       await fetch('/api/v1/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skill_id: skillId, rating }),
+        body: JSON.stringify({ skill_id: skillId, rating: r }),
       });
     } catch {
       // silently fail
@@ -23,24 +26,18 @@ export function FeedbackBar({ skillId }: Props) {
   };
 
   if (submitted) {
-    return <div className="text-center text-sm text-gray-400 py-2">感谢反馈 ✨</div>;
+    return (
+      <div className="text-center text-sm text-zinc-500 py-2 flex items-center justify-center gap-2">
+        <span className="material-symbols-outlined text-sm">check_circle</span>
+        感谢反馈！
+      </div>
+    );
   }
 
   return (
-    <div className="flex items-center justify-center gap-3 py-2">
-      <span className="text-sm text-gray-500">这条 skill 有用吗？</span>
-      <button
-        onClick={() => sendFeedback(1)}
-        className="px-3 py-1 rounded-lg text-xs border border-gray-200 hover:bg-green-50 hover:border-green-300 transition"
-      >
-        👍 有用
-      </button>
-      <button
-        onClick={() => sendFeedback(-1)}
-        className="px-3 py-1 rounded-lg text-xs border border-gray-200 hover:bg-red-50 hover:border-red-300 transition"
-      >
-        👎 没用
-      </button>
+    <div className="flex items-center justify-center gap-3 py-3 border-t border-zinc-900">
+      <span className="text-sm text-zinc-500">这条 skill 有用吗？</span>
+      <StarRating rating={rating} onChange={sendFeedback} size="md" />
     </div>
   );
 }

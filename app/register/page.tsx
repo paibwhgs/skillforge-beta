@@ -28,66 +28,108 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="max-w-sm mx-auto mt-12">
-      <h1 className="text-xl font-bold text-center mb-6">注册</h1>
+    <div className="min-h-screen flex items-center justify-center px-6 relative">
+      {/* Background glow */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[600px] h-[600px] bg-[#FF5C00]/5 rounded-full blur-[120px]" />
+      <div className="fixed bottom-1/4 right-1/4 -z-10 w-[500px] h-[500px] bg-[#508eff]/5 blur-[100px] rounded-full" />
 
-      <form onSubmit={handleSubmit} className="space-y-4 bg-white rounded-xl border p-5">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm">
-            {error}
+      <div className="w-full max-w-md">
+        <div className="bg-[#080808] border border-zinc-900 p-8 md:p-10 relative overflow-hidden">
+          <div className="mb-8 text-center">
+            <h1 className="font-display text-2xl text-white mb-2">加入 SkillForge</h1>
+            <p className="text-sm text-zinc-500">开启您的 AI 技能锻造之旅。</p>
           </div>
-        )}
 
-        <div>
-          <label className="block text-sm font-medium mb-1">邮箱</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-900/30 border border-red-800 text-red-400 px-3 py-2 rounded text-sm">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="font-label text-[10px] text-zinc-400 uppercase tracking-wider">
+                用户名 / Username
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  minLength={2}
+                  placeholder="Enter your handle"
+                  className="w-full bg-black border border-zinc-800 focus:border-[#FF5C00] focus:ring-1 focus:ring-[#FF5C00]/20 text-white py-3 px-4 transition-all outline-none text-sm placeholder:text-zinc-700"
+                />
+                <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 text-sm">
+                  person
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-label text-[10px] text-zinc-400 uppercase tracking-wider">
+                邮箱 / Email
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="dev@skillforge.tech"
+                  className="w-full bg-black border border-zinc-800 focus:border-[#FF5C00] focus:ring-1 focus:ring-[#FF5C00]/20 text-white py-3 px-4 transition-all outline-none text-sm placeholder:text-zinc-700"
+                />
+                <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 text-sm">
+                  alternate_email
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-label text-[10px] text-zinc-400 uppercase tracking-wider">
+                密码 / Password
+              </label>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="••••••••"
+                  className="w-full bg-black border border-zinc-800 focus:border-[#FF5C00] focus:ring-1 focus:ring-[#FF5C00]/20 text-white py-3 px-4 transition-all outline-none text-sm placeholder:text-zinc-700"
+                />
+                <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-zinc-600 text-sm">
+                  lock
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-zinc-900/30 border border-zinc-800 p-4 flex items-center gap-3">
+              <span className="material-symbols-outlined text-[#FF5C00] text-sm">verified_user</span>
+              <span className="font-mono text-xs text-zinc-400">Zero external dependencies, pure JWT auth</span>
+            </div>
+
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full bg-[#FF5C00] hover:bg-[#E65300] text-white font-bold py-4 transition-all active:scale-[0.98] font-display text-sm uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {busy ? '注册中...' : '立即注册 / Sign Up'}
+            </button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-sm text-zinc-500">
+              已经拥有账户？
+              <a href="/login" className="text-white hover:text-[#FF5C00] transition-colors ml-1 font-bold">
+                立即登录 / Login
+              </a>
+            </p>
+          </div>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">用户名</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            minLength={2}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">密码</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-2 rounded-lg transition text-sm"
-        >
-          {busy ? '注册中...' : '注册'}
-        </button>
-
-        <p className="text-xs text-gray-400 text-center">
-          已有账号？{' '}
-          <a href="/login" className="text-blue-600 hover:underline">
-            登录
-          </a>
-        </p>
-      </form>
+      </div>
     </div>
   );
 }

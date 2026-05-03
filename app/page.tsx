@@ -1,122 +1,180 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SearchInput } from '@/components/SearchInput';
-import { GenerationProgress } from '@/components/GenerationProgress';
-import { SkillPreview } from '@/components/SkillPreview';
-import { ChatPanel } from '@/components/ChatPanel';
-import { useAuth } from '@/components/AuthProvider';
-import type { GenerateResponse, StepStatus } from '@/types';
-
-const initialSteps: StepStatus[] = [
-  { step: 'searching', label: '搜索相关知识', done: false },
-  { step: 'curating', label: 'AI 策展提炼', done: false },
-  { step: 'formatting', label: '生成 Skill 文件', done: false },
-];
-
-const directSteps: StepStatus[] = [
-  { step: 'curating', label: 'AI 生成 Skill 内容', done: false },
-  { step: 'formatting', label: '格式化输出', done: false },
-];
+import { DEFAULT_MODEL } from '@/types';
+import type { SkillRecord } from '@/types';
 
 export default function Home() {
-  const { user } = useAuth();
   const [domain, setDomain] = useState('');
   const [format, setFormat] = useState<'claude' | 'markdown'>('claude');
   const [depth, setDepth] = useState<'quick' | 'deep'>('quick');
   const [searchEnabled, setSearchEnabled] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [steps, setSteps] = useState<StepStatus[]>(initialSteps);
-  const [result, setResult] = useState<GenerateResponse['skill'] | null>(null);
-  const [error, setError] = useState('');
+  const [engine, setEngine] = useState(DEFAULT_MODEL.engine);
+  const [model, setModel] = useState(DEFAULT_MODEL.model);
+  const [recentSkills, setRecentSkills] = useState<SkillRecord[]>([]);
 
-  const getInitialSteps = () => (searchEnabled ? initialSteps : directSteps);
-
-  const handleGenerate = async () => {
-    if (!domain.trim()) return;
-    setLoading(true);
-    setError('');
-    setResult(null);
-    setSteps(getInitialSteps().map((s) => ({ ...s })));
-
-    const advance = (i: number) => {
-      setSteps((prev) => prev.map((s, j) => (j <= i ? { ...s, done: true } : s)));
-    };
-
-    try {
-      advance(0);
-      const res = await fetch('/api/v1/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          domain: domain.trim(),
-          format,
-          depth,
-          mode: searchEnabled ? 'auto' : 'direct',
-        }),
-      });
-
-      advance(1);
-
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || '生成失败');
-        return;
-      }
-
-      advance(2);
-      setResult(data.skill);
-    } catch (e: any) {
-      setError(e.message || '网络错误');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleContentUpdate = (content: string) => {
-    setResult((prev) => (prev ? { ...prev, content } : prev));
-  };
+  useEffect(() => {
+    fetch('/api/v1/skills?limit=6')
+      .then((r) => r.json())
+      .then((data) => setRecentSkills(data.skills || []))
+      .catch(() => {});
+  }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">发现你的 AI Skill</h1>
-        <p className="text-gray-500 text-sm mt-1">
-          输入你的领域，AI 从互联网挖掘已验证的交互知识，生成标准 skill 文件
-        </p>
-      </div>
-
-      <SearchInput
-        domain={domain}
-        onDomainChange={setDomain}
-        format={format}
-        onFormatChange={setFormat}
-        depth={depth}
-        onDepthChange={setDepth}
-        searchEnabled={searchEnabled}
-        onSearchEnabledChange={setSearchEnabled}
-        loading={loading}
-        onGenerate={handleGenerate}
-      />
-
-      {loading && <GenerationProgress steps={steps} />}
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {error}
+    <div className="min-h-screen bg-black">
+      {/* Hero Section */}
+      <section className="w-full px-6 pt-16 pb-8 flex flex-col items-center text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#FF5C00]/30 bg-[#FF5C00]/5 text-[#FF5C00] text-[10px] font-bold uppercase tracking-widest mb-6">
+          <span className="material-symbols-outlined text-sm">bolt</span>
+          AI 驱动的技能合成
         </div>
+        <h1 className="font-display text-4xl sm:text-5xl mb-4 text-white max-w-3xl leading-tight">
+          加速你的 <span className="text-[#FF5C00]">技术栈</span>
+        </h1>
+        <p className="text-zinc-400 max-w-2xl text-base mb-10 leading-relaxed">
+          在数秒内生成针对任何领域的高密度学习路径、架构文档和实现指南。
+        </p>
+
+        {/* Search Input */}
+        <div className="w-full max-w-3xl">
+          <SearchInput
+            domain={domain}
+            onDomainChange={setDomain}
+            format={format}
+            onFormatChange={setFormat}
+            depth={depth}
+            onDepthChange={setDepth}
+            searchEnabled={searchEnabled}
+            onSearchEnabledChange={setSearchEnabled}
+            engine={engine}
+            model={model}
+            onModelChange={(e, m) => { setEngine(e); setModel(m); }}
+          />
+        </div>
+      </section>
+
+      {/* Recent Skills Bento Grid */}
+      {recentSkills.length > 0 && (
+        <section className="w-full max-w-7xl mx-auto px-6 py-12">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="font-display text-2xl text-white flex items-center gap-3">
+              <span className="material-symbols-outlined text-[#FF5C00]">auto_awesome</span>
+              最近生成
+            </h2>
+            <a
+              href="/history"
+              className="text-sm font-bold text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
+            >
+              查看库
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </a>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {/* Featured Card (first item) */}
+            {recentSkills.slice(0, 1).map((s) => (
+              <a
+                key={s.id}
+                href={`/skills/${s.id}`}
+                className="md:col-span-2 lg:col-span-3 row-span-2 group relative overflow-hidden rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-zinc-700 transition-all block"
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-zinc-900/50 to-zinc-950 opacity-50" />
+                <div className="relative p-8 h-full flex flex-col justify-end">
+                  <div className="mb-4">
+                    <span className="px-2 py-1 bg-[#FF5C00] text-white text-[10px] font-black uppercase tracking-tighter rounded">
+                      热门生成
+                    </span>
+                  </div>
+                  <h3 className="font-display text-2xl text-white mb-2">{s.title}</h3>
+                  <p className="text-zinc-400 text-sm mb-6 max-w-sm line-clamp-2">{s.domain}</p>
+                  <div className="flex items-center gap-4 text-zinc-500 text-xs">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">schedule</span>
+                      {new Date(s.created_at).toLocaleDateString('zh-CN')}
+                    </span>
+                  </div>
+                </div>
+              </a>
+            ))}
+
+            {/* Medium Cards */}
+            {recentSkills.slice(1, 3).map((s) => (
+              <a
+                key={s.id}
+                href={`/skills/${s.id}`}
+                className="md:col-span-2 lg:col-span-3 group p-6 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-zinc-700 transition-all flex flex-col justify-between block"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="material-symbols-outlined text-[#508eff]">terminal</span>
+                    <span className="text-[10px] font-label text-zinc-600 uppercase tracking-wider">
+                      {s.format === 'claude' ? 'Claude Code' : 'Markdown'}
+                    </span>
+                  </div>
+                  <h3 className="font-display text-xl text-white mb-2">{s.title}</h3>
+                  <p className="text-zinc-400 text-sm line-clamp-2">{s.domain}</p>
+                </div>
+              </a>
+            ))}
+
+            {/* Small Tag Cards */}
+            {recentSkills.slice(3, 6).map((s) => (
+              <a
+                key={s.id}
+                href={`/skills/${s.id}`}
+                className="lg:col-span-2 p-4 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-[#FF5C00]/30 transition-all block"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded bg-zinc-900 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-zinc-400 text-lg">auto_awesome</span>
+                  </div>
+                  <h4 className="text-white text-sm font-bold truncate">{s.title}</h4>
+                </div>
+                <p className="text-zinc-600 text-xs line-clamp-1">{s.domain}</p>
+              </a>
+            ))}
+          </div>
+        </section>
       )}
 
-      {result && <SkillPreview skill={result} />}
+      {/* Technical Features */}
+      <section className="w-full bg-zinc-950 border-t border-zinc-900 mt-12 px-6 py-24">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="flex flex-col gap-4">
+            <span className="material-symbols-outlined text-[#FF5C00] text-4xl">psychology</span>
+            <h3 className="font-display text-2xl text-white">AI 直出引擎</h3>
+            <p className="text-zinc-500 text-sm leading-relaxed">
+              利用 DeepSeek 的内部推理能力获取纯粹的架构知识，不受网络噪音干扰。
+            </p>
+          </div>
+          <div className="flex flex-col gap-4">
+            <span className="material-symbols-outlined text-[#508eff] text-4xl">travel_explore</span>
+            <h3 className="font-display text-2xl text-white">Tavily 合成</h3>
+            <p className="text-zinc-500 text-sm leading-relaxed">
+              实时网页抓取并合成最新的 API 文档和技术发布信息。
+            </p>
+          </div>
+          <div className="flex flex-col gap-4">
+            <span className="material-symbols-outlined text-[#FF5C00] text-4xl">code</span>
+            <h3 className="font-display text-2xl text-white">Claude Code 就绪</h3>
+            <p className="text-zinc-500 text-sm leading-relaxed">
+              输出完美格式化的 .md 文件，针对 Claude 的上下文窗口和工具链进行了优化。
+            </p>
+          </div>
+        </div>
+      </section>
 
-      {result && user && (
-        <ChatPanel skillId={result.id} onContentUpdate={handleContentUpdate} />
-      )}
-
-      {!result && !loading && !error && (
-        <div className="text-center py-12 text-gray-400">
-          <div className="text-5xl mb-4">🔍</div>
-          <p>输入领域描述，开始发现 skill</p>
+      {/* Empty State */}
+      {recentSkills.length === 0 && (
+        <div className="text-center py-16 text-zinc-500 max-w-sm mx-auto">
+          <div className="text-4xl mb-4 opacity-30">
+            <span className="material-symbols-outlined text-5xl">bolt</span>
+          </div>
+          <p className="text-sm">输入领域描述，开始铸造 skill</p>
+          <p className="text-xs mt-1 text-zinc-600">
+            支持搜索增强或 AI 直出两种生成模式
+          </p>
         </div>
       )}
     </div>

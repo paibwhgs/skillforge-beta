@@ -1,4 +1,5 @@
-import { chat } from './llm';
+import { chat, chatOpenCodeGo } from './llm';
+import { chatStream, chatStreamOpenCodeGo } from './llm-stream';
 import type { SearchResult } from '@/types';
 import { seeds } from '@/seeds/skills';
 
@@ -116,22 +117,47 @@ description: "One-line description of what this skill does and when to use it"
 
 **Note**: This skill was generated from AI knowledge without web search. For the most up-to-date information, consider enabling web search.`;
 
-export async function directGenerate(domain: string): Promise<string> {
-  return chat({
-    system: DIRECT_SYSTEM,
-    user: `Generate a comprehensive skill file for the domain: "${domain}"
+// LLM routing helpers
+function callLLM(
+  system: string, user: string,
+  engine?: string, model?: string,
+  temperature = 0.7,
+): Promise<string> {
+  if (engine === 'opencode-go') {
+    return chatOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature });
+  }
+  return chat({ system, user, temperature });
+}
+
+function callLLMStream(
+  system: string, user: string,
+  engine?: string, model?: string,
+  temperature = 0.7,
+) {
+  if (engine === 'opencode-go') {
+    return chatStreamOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature });
+  }
+  return chatStream({ system, user, temperature });
+}
+
+export async function directGenerate(domain: string, engine?: string, model?: string): Promise<string> {
+  return callLLM(
+    DIRECT_SYSTEM,
+    `Generate a comprehensive skill file for the domain: "${domain}"
 
 Draw from your training knowledge to create the most useful, accurate skill possible. Include practical examples and specific rules that someone working in this domain would find valuable.
 
 If the domain is highly specific or rapidly changing (e.g., a particular framework version), note any uncertainty about currency.`,
-    temperature: 0.7,
-  });
+    engine, model, 0.7,
+  );
 }
 
 export async function curate(
   domain: string,
   results: SearchResult[],
   level: 'rich' | 'sparse' | 'none',
+  engine?: string,
+  model?: string,
 ): Promise<string> {
   const block = results
     .map((r) => `- ${r.title} (${r.url}): ${r.content.slice(0, 300)}`)
@@ -139,31 +165,66 @@ export async function curate(
 
   // L1: Rich results — normal curation
   if (level === 'rich') {
-    return chat({
-      system: CURATION_SYSTEM,
-      user: buildCuratorPrompt(domain, results),
-      temperature: 0.7,
-    });
+    return callLLM(CURATION_SYSTEM, buildCuratorPrompt(domain, results), engine, model, 0.7);
   }
 
   // L2: Sparse results — mix search + AI knowledge
   if (level === 'sparse') {
-    return chat({
-      system: CURATION_SYSTEM,
-      user: `## User domain
+    return callLLM(
+      CURATION_SYSTEM,
+      `## User domain
 ${domain}
 
 ## Search results (limited — only ${results.length} found)
 ${block || '(no useful results)'}
 
 ## Special instruction
-Search results are sparse. Supplement with general AI knowledge for this domain, but clearly note in the output that "Search results were limited; content partially based on AI general knowledge." Do NOT fabricate citations.`,
-      temperature: 0.7,
-    });
+Search results were sparse. Supplement with general AI knowledge for this domain, but clearly note in the output that "Search results were limited; content partially based on AI general knowledge." Do NOT fabricate citations.`,
+      engine, model, 0.7,
+    );
   }
 
   // L3: No results — fallback to seed library
   return fallbackSeed(domain);
+}
+
+export async function* curateStream(
+  domain: string,
+  results: SearchResult[],
+  level: 'rich' | 'sparse' | 'none',
+  engine?: string,
+  model?: string,
+): AsyncGenerator<string> {
+  const block = results
+    .map((r) => `- ${r.title} (${r.url}): ${r.content.slice(0, 300)}`)
+    .join('\n');
+
+  if (level === 'rich') {
+    for await (const token of callLLMStream(CURATION_SYSTEM, buildCuratorPrompt(domain, results), engine, model, 0.7)) {
+      yield token;
+    }
+    return;
+  }
+
+  if (level === 'sparse') {
+    for await (const token of callLLMStream(
+      CURATION_SYSTEM,
+      `## User domain
+${domain}
+
+## Search results (limited — only ${results.length} found)
+${block || '(no useful results)'}
+
+## Special instruction
+Search results were sparse. Supplement with general AI knowledge for this domain, but clearly note in the output that "Search results were limited; content partially based on AI general knowledge." Do NOT fabricate citations.`,
+      engine, model, 0.7,
+    )) {
+      yield token;
+    }
+    return;
+  }
+
+  yield fallbackSeed(domain);
 }
 
 function fallbackSeed(domain: string): string {
