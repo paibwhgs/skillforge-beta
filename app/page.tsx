@@ -14,22 +14,30 @@ const initialSteps: StepStatus[] = [
   { step: 'formatting', label: '生成 Skill 文件', done: false },
 ];
 
+const directSteps: StepStatus[] = [
+  { step: 'curating', label: 'AI 生成 Skill 内容', done: false },
+  { step: 'formatting', label: '格式化输出', done: false },
+];
+
 export default function Home() {
   const { user } = useAuth();
   const [domain, setDomain] = useState('');
   const [format, setFormat] = useState<'claude' | 'markdown'>('claude');
   const [depth, setDepth] = useState<'quick' | 'deep'>('quick');
+  const [searchEnabled, setSearchEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [steps, setSteps] = useState<StepStatus[]>(initialSteps);
   const [result, setResult] = useState<GenerateResponse['skill'] | null>(null);
   const [error, setError] = useState('');
+
+  const getInitialSteps = () => (searchEnabled ? initialSteps : directSteps);
 
   const handleGenerate = async () => {
     if (!domain.trim()) return;
     setLoading(true);
     setError('');
     setResult(null);
-    setSteps(initialSteps.map((s) => ({ ...s })));
+    setSteps(getInitialSteps().map((s) => ({ ...s })));
 
     const advance = (i: number) => {
       setSteps((prev) => prev.map((s, j) => (j <= i ? { ...s, done: true } : s)));
@@ -40,7 +48,12 @@ export default function Home() {
       const res = await fetch('/api/v1/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain: domain.trim(), format, depth }),
+        body: JSON.stringify({
+          domain: domain.trim(),
+          format,
+          depth,
+          mode: searchEnabled ? 'auto' : 'direct',
+        }),
       });
 
       advance(1);
@@ -80,6 +93,8 @@ export default function Home() {
         onFormatChange={setFormat}
         depth={depth}
         onDepthChange={setDepth}
+        searchEnabled={searchEnabled}
+        onSearchEnabledChange={setSearchEnabled}
         loading={loading}
         onGenerate={handleGenerate}
       />

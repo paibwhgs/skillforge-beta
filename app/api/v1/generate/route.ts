@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initDB, insertSkill, insertSources } from '@/lib/db';
 import { multiSearch } from '@/lib/search';
-import { curate } from '@/lib/curator';
+import { curate, directGenerate } from '@/lib/curator';
 import { formatSkill, extractTitle } from '@/lib/formatter';
 import { getUserId } from '@/lib/auth';
 import type { GenerateRequest } from '@/types';
@@ -30,9 +30,38 @@ export async function POST(request: NextRequest) {
   }
 
   const depth = body.depth || 'quick';
+  const mode = body.mode || 'auto';
+
+  // Phase 1: Search (skip in direct mode)
+  let results: any[] = [];
+  let level: 'rich' | 'sparse' | 'none' = 'none';
+
+  if (mode === 'direct') {
+    const rawContent = await directGenerate(domain);
+    const content = formatSkill(rawContent, format);
+    const title = extractTitle(content);
+    const userId = getUserId(request);
+    const id = await insertSkill(title, domain, format, content, depth, userId || undefined);
+
+    return NextResponse.json({
+      success: true,
+      skill: {
+        id,
+        title,
+        domain,
+        format,
+        content,
+        sources: [],
+        sources_level: 'none' as const,
+        created_at: new Date().toISOString(),
+      },
+    });
+  }
 
   // Phase 1: Search
-  const { results, level } = await multiSearch(domain, depth);
+  const searchResults = await multiSearch(domain, depth);
+  results = searchResults.results;
+  level = searchResults.level;
 
   // Phase 2: Curate
   const rawContent = await curate(domain, results, level);

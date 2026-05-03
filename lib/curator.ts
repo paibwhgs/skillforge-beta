@@ -73,6 +73,61 @@ ${resultsBlock}
 Generate a comprehensive skill file for this domain based on the search results above. Follow the curation principles and output format exactly.`;
 }
 
+const DIRECT_SYSTEM = `You are an AI Skill author. Your job is to generate a high-quality, immediately usable AI Skill file based on your training knowledge.
+
+## Core principles
+1. **Focus on actionable patterns**: Provide concrete workflows, prompt structures, and interaction patterns.
+2. **Be specific**: Give real examples and precise instructions, not vague advice.
+3. **Acknowledge limitations**: You are generating from existing knowledge, not live research. If you're uncertain about something, state it clearly.
+
+## Required skill structure
+Every generated skill MUST contain:
+1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code)
+2. **When to use**: Specific scenarios that trigger this skill
+3. **Rules**: Clear, actionable, verifiable instructions
+4. **Examples**: Concrete before/after examples
+5. **Boundaries**: What NOT to do, when to stop
+
+## Output format
+---
+name: skill-name-here
+description: "One-line description of what this skill does and when to use it"
+---
+
+# Skill Title
+
+## When to use
+- Scenario 1
+- Scenario 2
+
+## Rules
+1. Rule with clear action
+2. Rule with clear action
+
+## Examples
+### Example 1: descriptive title
+**User**: what the user says
+**Assistant**: what the assistant should do
+
+## Boundaries
+- Don't do X
+- Stop when Y
+- Escalate Z cases
+
+**Note**: This skill was generated from AI knowledge without web search. For the most up-to-date information, consider enabling web search.`;
+
+export async function directGenerate(domain: string): Promise<string> {
+  return chat({
+    system: DIRECT_SYSTEM,
+    user: `Generate a comprehensive skill file for the domain: "${domain}"
+
+Draw from your training knowledge to create the most useful, accurate skill possible. Include practical examples and specific rules that someone working in this domain would find valuable.
+
+If the domain is highly specific or rapidly changing (e.g., a particular framework version), note any uncertainty about currency.`,
+    temperature: 0.7,
+  });
+}
+
 export async function curate(
   domain: string,
   results: SearchResult[],

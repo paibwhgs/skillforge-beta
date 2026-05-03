@@ -7,6 +7,8 @@ interface SearchInputProps {
   onFormatChange: (v: 'claude' | 'markdown') => void;
   depth: string;
   onDepthChange: (v: 'quick' | 'deep') => void;
+  searchEnabled: boolean;
+  onSearchEnabledChange: (v: boolean) => void;
   loading: boolean;
   onGenerate: () => void;
 }
@@ -18,6 +20,8 @@ export function SearchInput({
   onFormatChange,
   depth,
   onDepthChange,
+  searchEnabled,
+  onSearchEnabledChange,
   loading,
   onGenerate,
 }: SearchInputProps) {
@@ -63,12 +67,36 @@ export function SearchInput({
         </div>
       </div>
 
+      <div className="flex items-center justify-between">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={searchEnabled}
+            onClick={() => onSearchEnabledChange(!searchEnabled)}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 ${
+              searchEnabled ? 'bg-blue-600' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                searchEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'
+              }`}
+            />
+          </button>
+          <span className="text-sm text-gray-700">联网搜索</span>
+        </label>
+        {!searchEnabled && (
+          <span className="text-xs text-amber-600">由 AI 直接生成，无需网络搜索</span>
+        )}
+      </div>
+
       <button
         onClick={onGenerate}
         disabled={loading || !domain.trim()}
         className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium py-2.5 px-4 rounded-lg transition text-sm"
       >
-        {loading ? '生成中...' : '🔍 发现 Skill'}
+        {loading ? '生成中...' : searchEnabled ? '🔍 发现 Skill' : '✨ 生成 Skill'}
       </button>
     </div>
   );

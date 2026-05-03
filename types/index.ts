@@ -9,6 +9,7 @@ export interface GenerateRequest {
   domain: string;
   format?: 'claude' | 'openclaw' | 'markdown';
   depth?: 'quick' | 'deep';
+  mode?: 'auto' | 'direct';
 }
 
 export interface GenerateResponse {
