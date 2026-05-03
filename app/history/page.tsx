@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import type { SkillRecord } from "@/types";
+import { useEffect, useState } from 'react';
+import type { SkillRecord } from '@/types';
 
 export default function HistoryPage() {
   const [skills, setSkills] = useState<SkillRecord[]>([]);
@@ -9,7 +9,7 @@ export default function HistoryPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/v1/skills?limit=50")
+    fetch('/api/v1/skills?limit=50')
       .then((r) => r.json())
       .then((data) => setSkills(data.skills || []))
       .catch(() => {})
@@ -17,7 +17,7 @@ export default function HistoryPage() {
   }, []);
 
   const formatLabel = (f: string) =>
-    f === "claude" ? "Claude Code" : f === "markdown" ? "Markdown" : f;
+    f === 'claude' ? 'Claude Code' : f === 'markdown' ? 'Markdown' : f;
 
   return (
     <div className="space-y-4">
@@ -39,9 +39,7 @@ export default function HistoryPage() {
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-sm truncate">{s.title}</h3>
-                  <p className="text-xs text-gray-400 mt-0.5 truncate">
-                    {s.domain}
-                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5 truncate">{s.domain}</p>
                 </div>
                 <div className="flex items-center gap-2 ml-4 shrink-0">
                   <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">
@@ -50,16 +48,16 @@ export default function HistoryPage() {
                   <span
                     className={`text-xs px-2 py-0.5 rounded ${
                       s.rating === 1
-                        ? "bg-green-100 text-green-700"
+                        ? 'bg-green-100 text-green-700'
                         : s.rating === -1
-                          ? "bg-red-100 text-red-700"
-                          : "bg-gray-100 text-gray-500"
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-gray-100 text-gray-500'
                     }`}
                   >
-                    {s.rating === 1 ? "👍" : s.rating === -1 ? "👎" : "—"}
+                    {s.rating === 1 ? '👍' : s.rating === -1 ? '👎' : '—'}
                   </span>
                   <span className="text-xs text-gray-400">
-                    {new Date(s.created_at).toLocaleDateString("zh-CN")}
+                    {new Date(s.created_at).toLocaleDateString('zh-CN')}
                   </span>
                 </div>
               </div>
@@ -82,12 +80,12 @@ export default function HistoryPage() {
                   <button
                     onClick={() => {
                       const blob = new Blob([s.content], {
-                        type: "text/markdown",
+                        type: 'text/markdown',
                       });
                       const url = URL.createObjectURL(blob);
-                      const a = document.createElement("a");
+                      const a = document.createElement('a');
                       a.href = url;
-                      a.download = `${s.title.replace(/\s+/g, "-").toLowerCase()}.md`;
+                      a.download = `${s.title.replace(/\s+/g, '-').toLowerCase()}.md`;
                       a.click();
                       URL.revokeObjectURL(url);
                     }}

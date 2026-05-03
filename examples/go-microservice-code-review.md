@@ -1,11 +1,12 @@
 ---
 name: go-microservice-code-review
-description: "Reviews Go microservice code for idiomatic patterns, concurrency safety, error handling, and production readiness in distributed systems"
+description: 'Reviews Go microservice code for idiomatic patterns, concurrency safety, error handling, and production readiness in distributed systems'
 ---
 
 # Go Microservice Code Review
 
 ## When to use
+
 - Reviewing Go code that is part of a microservices architecture
 - Evaluating error handling patterns, logging, and observability in Go services
 - Checking for idiomatic Go patterns (interfaces, composition over inheritance, zero values)
@@ -34,7 +35,9 @@ description: "Reviews Go microservice code for idiomatic patterns, concurrency s
 ## Examples
 
 ### Example 1: Context propagation review
+
 **User**: Review this handler
+
 ```go
 func (s *Service) ProcessOrder(orderID string) (*Order, error) {
     dbResult, err := s.db.Query("SELECT * FROM orders WHERE id = ?", orderID)
@@ -44,13 +47,16 @@ func (s *Service) ProcessOrder(orderID string) (*Order, error) {
     return dbResult, nil
 }
 ```
+
 **Assistant**: Issues found:
+
 1. Missing `context.Context` as first parameter — database operations need context for cancellation/timeout
 2. Error not wrapped — use `fmt.Errorf("query order %s: %w", orderID, err)`
 3. SQL injection risk — use parameterized queries
 4. No timeout on the query — the caller should pass a context with deadline
 
 **Corrected version**:
+
 ```go
 func (s *Service) ProcessOrder(ctx context.Context, orderID string) (*Order, error) {
     ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -66,7 +72,9 @@ func (s *Service) ProcessOrder(ctx context.Context, orderID string) (*Order, err
 ```
 
 ### Example 2: Goroutine lifecycle and graceful shutdown
+
 **User**: Review this worker pool
+
 ```go
 func (s *Service) StartWorkers() {
     for i := 0; i < 10; i++ {
@@ -79,13 +87,16 @@ func (s *Service) StartWorkers() {
     }
 }
 ```
+
 **Assistant**: Concurrency issues:
+
 1. No way to stop workers gracefully
 2. Channel receive blocks without context
 3. No error handling or panic recovery in goroutines
 4. No WaitGroup to track completion
 
 ## Boundaries
+
 - Do NOT rewrite entire codebases — focus on patterns and specific issues
 - Do NOT give generic Go advice unrelated to microservices
 - Do NOT suggest microservice decomposition without understanding domain boundaries

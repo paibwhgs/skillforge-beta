@@ -1,5 +1,5 @@
 export const seeds: Record<string, string> = {
-  "code review": `# Code Review Assistant
+  'code review': `# Code Review Assistant
 
 ## When to use
 - Reviewing pull requests or code changes

@@ -5,23 +5,23 @@ interface ChatOpts {
   maxTokens?: number;
 }
 
-const DEEPSEEK_BASE = "https://api.deepseek.com/v1";
+const DEEPSEEK_BASE = 'https://api.deepseek.com/v1';
 
 export async function chat(opts: ChatOpts): Promise<string> {
   const apiKey = process.env.DEEPSEEK_API_KEY;
-  if (!apiKey) throw new Error("DEEPSEEK_API_KEY not configured");
+  if (!apiKey) throw new Error('DEEPSEEK_API_KEY not configured');
 
   const res = await fetch(`${DEEPSEEK_BASE}/chat/completions`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "deepseek-chat",
+      model: 'deepseek-chat',
       messages: [
-        { role: "system", content: opts.system },
-        { role: "user", content: opts.user },
+        { role: 'system', content: opts.system },
+        { role: 'user', content: opts.user },
       ],
       temperature: opts.temperature ?? 0.7,
       max_tokens: opts.maxTokens ?? 4096,
@@ -34,7 +34,7 @@ export async function chat(opts: ChatOpts): Promise<string> {
   }
 
   const json = await res.json();
-  const content = json.choices[0]?.message?.content?.trim() || "";
-  if (!content) throw new Error("Empty response from DeepSeek");
+  const content = json.choices[0]?.message?.content?.trim() || '';
+  if (!content) throw new Error('Empty response from DeepSeek');
   return content;
 }

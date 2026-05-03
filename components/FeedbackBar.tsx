@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 
 interface Props {
   skillId: string;
@@ -11,9 +11,9 @@ export function FeedbackBar({ skillId }: Props) {
 
   const sendFeedback = async (rating: 1 | -1) => {
     try {
-      await fetch("/api/v1/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      await fetch('/api/v1/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skill_id: skillId, rating }),
       });
     } catch {
@@ -23,11 +23,7 @@ export function FeedbackBar({ skillId }: Props) {
   };
 
   if (submitted) {
-    return (
-      <div className="text-center text-sm text-gray-400 py-2">
-        感谢反馈 ✨
-      </div>
-    );
+    return <div className="text-center text-sm text-gray-400 py-2">感谢反馈 ✨</div>;
   }
 
   return (

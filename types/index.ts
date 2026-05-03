@@ -7,8 +7,8 @@ export interface SearchResult {
 
 export interface GenerateRequest {
   domain: string;
-  format?: "claude" | "openclaw" | "markdown";
-  depth?: "quick" | "deep";
+  format?: 'claude' | 'openclaw' | 'markdown';
+  depth?: 'quick' | 'deep';
 }
 
 export interface GenerateResponse {
@@ -20,7 +20,7 @@ export interface GenerateResponse {
     format: string;
     content: string;
     sources: { title: string; url: string }[];
-    sources_level: "rich" | "sparse" | "none";
+    sources_level: 'rich' | 'sparse' | 'none';
     created_at: string;
   };
 }
@@ -58,7 +58,24 @@ export interface FeedbackRequest {
 }
 
 export interface StepStatus {
-  step: "searching" | "curating" | "formatting";
+  step: 'searching' | 'curating' | 'formatting';
   label: string;
   done: boolean;
+}
+
+export interface UserRecord {
+  id: string;
+  email: string;
+  username: string;
+  created_at: string;
+}
+
+export interface AuthResponse {
+  user: UserRecord;
+}
+
+export interface ChatRequest {
+  skillId: string;
+  message: string;
+  history: { role: 'user' | 'assistant'; content: string }[];
 }

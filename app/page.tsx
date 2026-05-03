@@ -1,44 +1,45 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { SearchInput } from "@/components/SearchInput";
-import { GenerationProgress } from "@/components/GenerationProgress";
-import { SkillPreview } from "@/components/SkillPreview";
-import type { GenerateResponse, StepStatus } from "@/types";
+import { useState } from 'react';
+import { SearchInput } from '@/components/SearchInput';
+import { GenerationProgress } from '@/components/GenerationProgress';
+import { SkillPreview } from '@/components/SkillPreview';
+import { ChatPanel } from '@/components/ChatPanel';
+import { useAuth } from '@/components/AuthProvider';
+import type { GenerateResponse, StepStatus } from '@/types';
 
 const initialSteps: StepStatus[] = [
-  { step: "searching", label: "搜索相关知识", done: false },
-  { step: "curating", label: "AI 策展提炼", done: false },
-  { step: "formatting", label: "生成 Skill 文件", done: false },
+  { step: 'searching', label: '搜索相关知识', done: false },
+  { step: 'curating', label: 'AI 策展提炼', done: false },
+  { step: 'formatting', label: '生成 Skill 文件', done: false },
 ];
 
 export default function Home() {
-  const [domain, setDomain] = useState("");
-  const [format, setFormat] = useState<"claude" | "markdown">("claude");
-  const [depth, setDepth] = useState<"quick" | "deep">("quick");
+  const { user } = useAuth();
+  const [domain, setDomain] = useState('');
+  const [format, setFormat] = useState<'claude' | 'markdown'>('claude');
+  const [depth, setDepth] = useState<'quick' | 'deep'>('quick');
   const [loading, setLoading] = useState(false);
   const [steps, setSteps] = useState<StepStatus[]>(initialSteps);
-  const [result, setResult] = useState<GenerateResponse["skill"] | null>(null);
-  const [error, setError] = useState("");
+  const [result, setResult] = useState<GenerateResponse['skill'] | null>(null);
+  const [error, setError] = useState('');
 
   const handleGenerate = async () => {
     if (!domain.trim()) return;
     setLoading(true);
-    setError("");
+    setError('');
     setResult(null);
     setSteps(initialSteps.map((s) => ({ ...s })));
 
     const advance = (i: number) => {
-      setSteps((prev) =>
-        prev.map((s, j) => (j <= i ? { ...s, done: true } : s))
-      );
+      setSteps((prev) => prev.map((s, j) => (j <= i ? { ...s, done: true } : s)));
     };
 
     try {
       advance(0);
-      const res = await fetch("/api/v1/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/v1/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain: domain.trim(), format, depth }),
       });
 
@@ -46,25 +47,27 @@ export default function Home() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "生成失败");
+        setError(data.error || '生成失败');
         return;
       }
 
       advance(2);
       setResult(data.skill);
     } catch (e: any) {
-      setError(e.message || "网络错误");
+      setError(e.message || '网络错误');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleContentUpdate = (content: string) => {
+    setResult((prev) => (prev ? { ...prev, content } : prev));
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">
-          发现你的 AI Skill
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight">发现你的 AI Skill</h1>
         <p className="text-gray-500 text-sm mt-1">
           输入你的领域，AI 从互联网挖掘已验证的交互知识，生成标准 skill 文件
         </p>
@@ -90,6 +93,10 @@ export default function Home() {
       )}
 
       {result && <SkillPreview skill={result} />}
+
+      {result && user && (
+        <ChatPanel skillId={result.id} onContentUpdate={handleContentUpdate} />
+      )}
 
       {!result && !loading && !error && (
         <div className="text-center py-12 text-gray-400">
