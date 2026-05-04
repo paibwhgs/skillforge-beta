@@ -4,23 +4,60 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SkillRecord } from '@/types';
 import { SkillCard } from '@/components/SkillCard';
-import { StarRating } from '@/components/StarRating';
+
+// Module-level cache for instant back-navigation
+let skillsCache: { data: SkillRecord[]; ts: number } | null = null;
 
 export default function HistoryPage() {
   const router = useRouter();
-  const [skills, setSkills] = useState<SkillRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [skills, setSkills] = useState<SkillRecord[]>(() => {
+    if (skillsCache) return skillsCache.data;
+    return [];
+  });
+  const [loading, setLoading] = useState(!skillsCache);
   const [filterMode, setFilterMode] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [showBookmarkFilter, setShowBookmarkFilter] = useState(false);
+  const [bookmarkFilter, setBookmarkFilter] = useState<'all' | 'bookmarked'>('all');
   const perPage = 6;
 
+  const toggleBookmark = async (id: string, current: number) => {
+    const next = current ? 0 : 1;
+    setSkills((prev) => {
+      const updated = prev.map((s) => (s.id === id ? { ...s, bookmarked: next } : s));
+      if (skillsCache) skillsCache.data = updated;
+      return updated;
+    });
+    try {
+      await fetch(`/api/v1/skills/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookmarked: next }),
+      });
+    } catch {
+      setSkills((prev) => {
+        const reverted = prev.map((s) => (s.id === id ? { ...s, bookmarked: current } : s));
+        if (skillsCache) skillsCache.data = reverted;
+        return reverted;
+      });
+    }
+  };
+
   useEffect(() => {
+    if (skillsCache) {
+      setSkills(skillsCache.data);
+      setLoading(false);
+    }
     fetch('/api/v1/skills?limit=50')
       .then((r) => r.json())
-      .then((data) => setSkills(data.skills || []))
+      .then((data) => {
+        const list = data.skills || [];
+        skillsCache = { data: list, ts: Date.now() };
+        setSkills(list);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -45,6 +82,11 @@ export default function HistoryPage() {
       list = list.filter((s) => s.mode === 'auto');
     }
 
+    // Filter by bookmark
+    if (bookmarkFilter === 'bookmarked') {
+      list = list.filter((s) => s.bookmarked === 1);
+    }
+
     // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -60,12 +102,12 @@ export default function HistoryPage() {
       list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else if (sortBy === 'oldest') {
       list.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    } else if (sortBy === 'rating') {
-      list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else if (sortBy === 'bookmark') {
+      list.sort((a, b) => (b.bookmarked || 0) - (a.bookmarked || 0));
     }
 
     return list;
-  }, [skills, filterMode, sortBy, searchQuery]);
+  }, [skills, filterMode, bookmarkFilter, sortBy, searchQuery]);
 
   const totalPages = Math.ceil(filtered.length / perPage);
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
@@ -73,11 +115,13 @@ export default function HistoryPage() {
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm('确定要删除这条 skill 吗？')) return;
+    const removed = skills.find((s) => s.id === id);
+    setSkills((prev) => prev.filter((s) => s.id !== id)); // optimistic
     try {
       const res = await fetch(`/api/v1/skills/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('删除失败');
-      setSkills((prev) => prev.filter((s) => s.id !== id));
     } catch {
+      if (removed) setSkills((prev) => [...prev, removed]); // revert
       alert('删除失败，请重试');
     }
   };
@@ -163,14 +207,21 @@ export default function HistoryPage() {
                   >
                     <option value="newest">最新优先</option>
                     <option value="oldest">最早优先</option>
-                    <option value="rating">评分最高</option>
+                    <option value="bookmark">收藏优先</option>
                   </select>
                   <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none text-sm">
                     expand_more
                   </span>
                 </div>
 
-                <button className="bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs px-4 py-2 rounded hover:border-[#FF5C00] hover:text-[#FF5C00] transition-all flex items-center gap-2">
+                <button
+                  onClick={() => setShowBookmarkFilter(!showBookmarkFilter)}
+                  className={`bg-zinc-900 border text-xs px-4 py-2 rounded transition-all flex items-center gap-2 ${
+                    showBookmarkFilter || bookmarkFilter === 'bookmarked'
+                      ? 'border-[#FF5C00] text-[#FF5C00]'
+                      : 'border-zinc-800 text-zinc-400 hover:border-[#FF5C00] hover:text-[#FF5C00]'
+                  }`}
+                >
                   <span className="material-symbols-outlined text-sm">filter_list</span>
                   高级筛选
                 </button>
@@ -189,6 +240,36 @@ export default function HistoryPage() {
                 />
               </div>
             </div>
+
+            {/* Bookmark Filter Panel */}
+            {showBookmarkFilter && (
+              <div className="p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg flex items-center gap-4">
+                <span className="text-xs text-zinc-400">收藏状态</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setBookmarkFilter('all'); setPage(1); }}
+                    className={`text-xs px-3 py-1.5 rounded transition-all ${
+                      bookmarkFilter === 'all'
+                        ? 'bg-[#FF5C00] text-white'
+                        : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    全部
+                  </button>
+                  <button
+                    onClick={() => { setBookmarkFilter('bookmarked'); setPage(1); }}
+                    className={`text-xs px-3 py-1.5 rounded transition-all flex items-center gap-1 ${
+                      bookmarkFilter === 'bookmarked'
+                        ? 'bg-[#FF5C00] text-white'
+                        : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
+                    已收藏
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Card Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -222,7 +303,7 @@ export default function HistoryPage() {
                     <tr>
                       <th className="px-6 py-4 font-semibold">SKILL 标题</th>
                       <th className="px-6 py-4 font-semibold">模式</th>
-                      <th className="px-6 py-4 font-semibold">评分</th>
+                      <th className="px-6 py-4 font-semibold">收藏</th>
                       <th className="px-6 py-4 font-semibold">日期</th>
                       <th className="px-6 py-4 font-semibold text-right">操作</th>
                     </tr>
@@ -243,7 +324,16 @@ export default function HistoryPage() {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <StarRating rating={s.rating || 0} readonly size="sm" />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); toggleBookmark(s.id, s.bookmarked); }}
+                              className={`material-symbols-outlined text-lg transition-all ${
+                                s.bookmarked ? 'text-[#FF5C00]' : 'text-zinc-600 hover:text-zinc-400'
+                              }`}
+                              style={{ fontVariationSettings: s.bookmarked ? "'FILL' 1" : "'FILL' 0" }}
+                              title={s.bookmarked ? '取消收藏' : '收藏'}
+                            >
+                              bookmark
+                            </button>
                           </td>
                           <td className="px-6 py-4 text-zinc-500">
                             {new Date(s.created_at).toLocaleDateString('zh-CN')}

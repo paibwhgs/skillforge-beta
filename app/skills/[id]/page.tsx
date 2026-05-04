@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { SkillPreview } from '@/components/SkillPreview';
-import { FeedbackBar } from '@/components/FeedbackBar';
 import { ChatPanel } from '@/components/ChatPanel';
 import { useAuth } from '@/components/AuthProvider';
 import type { SkillRecord, SkillFile } from '@/types';
@@ -180,10 +179,9 @@ export default function SkillDetailPage() {
                   sources,
                   sources_level: sourcesLevel,
                   created_at: skill.created_at,
+                  bookmarked: skill.bookmarked,
                 }}
               />
-
-              <FeedbackBar skillId={skill.id} />
             </div>
 
             {/* Right: Chat Panel — permanently visible */}

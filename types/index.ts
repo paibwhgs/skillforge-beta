@@ -45,8 +45,7 @@ export interface SkillRecord {
   domain: string;
   format: string;
   content: string;
-  rating: number;
-  feedback: string;
+  bookmarked: number;
   depth: string;
   mode: string;
   created_at: string;
@@ -59,12 +58,6 @@ export interface SkillSource {
   title: string;
   relevance: string;
   created_at: string;
-}
-
-export interface FeedbackRequest {
-  skill_id: string;
-  rating: number;
-  feedback?: string;
 }
 
 export interface StepStatus {

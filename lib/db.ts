@@ -3,6 +3,7 @@ import { v4 as uuid } from 'uuid';
 import type { SkillRecord, SkillSource, SkillFile, UserRecord } from '@/types';
 
 let db: Client | null = null;
+let initialized = false;
 
 function getDb(): Client {
   if (!db) {
@@ -20,8 +21,7 @@ function rowToSkill(r: Row): SkillRecord {
     domain: String(r.domain),
     format: String(r.format),
     content: String(r.content),
-    rating: Number(r.rating),
-    feedback: String(r.feedback || ''),
+    bookmarked: Number(r.bookmarked || 0),
     depth: String(r.depth),
     mode: String(r.mode || 'auto'),
     created_at: String(r.created_at),
@@ -49,6 +49,7 @@ function rowToUser(r: Row): UserRecord {
 }
 
 export async function initDB() {
+  if (initialized) return;
   const c = getDb();
   await c.execute(`
     CREATE TABLE IF NOT EXISTS users (
@@ -106,13 +107,16 @@ export async function initDB() {
     )
   `);
   await c.execute('CREATE INDEX IF NOT EXISTS idx_skill_files ON skill_files(skill_id)');
+  await c.execute('CREATE INDEX IF NOT EXISTS idx_skills_user ON skills(user_id)');
   // Migrate existing tables — add columns that may not exist yet
   for (const stmt of [
     "ALTER TABLE skills ADD COLUMN user_id TEXT DEFAULT ''",
     "ALTER TABLE skills ADD COLUMN mode TEXT DEFAULT 'auto'",
+    "ALTER TABLE skills ADD COLUMN bookmarked INTEGER DEFAULT 0",
   ]) {
     try { await c.execute(stmt); } catch { /* column may already exist */ }
   }
+  initialized = true;
 }
 
 export async function insertSkill(
@@ -161,15 +165,14 @@ export async function getSkills(limit: number = 20): Promise<SkillRecord[]> {
   return rows.rows.map(rowToSkill);
 }
 
-export async function updateSkillRating(
+export async function updateSkillBookmark(
   id: string,
-  rating: number,
-  feedback: string = '',
+  bookmarked: number,
 ): Promise<boolean> {
   const c = getDb();
   const result = await c.execute({
-    sql: 'UPDATE skills SET rating = ?, feedback = ? WHERE id = ?',
-    args: [rating, feedback, id],
+    sql: 'UPDATE skills SET bookmarked = ? WHERE id = ?',
+    args: [bookmarked, id],
   });
   return result.rowsAffected > 0;
 }

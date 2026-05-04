@@ -36,6 +36,16 @@ export function Header() {
           >
             控制台
           </a>
+          <a
+            href="/docs"
+            className={`h-full flex items-center transition-colors ${
+              isActive('/docs')
+                ? 'text-white border-b-2 border-[#FF5C00] font-medium'
+                : 'text-zinc-500 hover:text-zinc-200'
+            }`}
+          >
+            文档
+          </a>
         </nav>
         <div className="flex items-center gap-4">
           {loading ? (

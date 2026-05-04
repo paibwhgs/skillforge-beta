@@ -5,6 +5,8 @@ import { SearchInput } from '@/components/SearchInput';
 import { DEFAULT_MODEL } from '@/types';
 import type { SkillRecord } from '@/types';
 
+let recentSkillsCache: { data: SkillRecord[]; ts: number } | null = null;
+
 export default function Home() {
   const [domain, setDomain] = useState('');
   const [format, setFormat] = useState<'claude' | 'openclaw' | 'markdown'>('claude');
@@ -12,12 +14,23 @@ export default function Home() {
   const [searchEnabled, setSearchEnabled] = useState(true);
   const [engine, setEngine] = useState(DEFAULT_MODEL.engine);
   const [model, setModel] = useState(DEFAULT_MODEL.model);
-  const [recentSkills, setRecentSkills] = useState<SkillRecord[]>([]);
+  const [recentSkills, setRecentSkills] = useState<SkillRecord[]>(() => {
+    if (recentSkillsCache) return recentSkillsCache.data;
+    return [];
+  });
 
   useEffect(() => {
+    if (recentSkillsCache) {
+      setRecentSkills(recentSkillsCache.data);
+      return;
+    }
     fetch('/api/v1/skills?limit=6')
       .then((r) => r.json())
-      .then((data) => setRecentSkills(data.skills || []))
+      .then((data) => {
+        const list = data.skills || [];
+        recentSkillsCache = { data: list, ts: Date.now() };
+        setRecentSkills(list);
+      })
       .catch(() => {});
   }, []);
 

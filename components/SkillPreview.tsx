@@ -2,20 +2,34 @@
 
 import { useState, useEffect } from 'react';
 import type { GenerateResponse } from '@/types';
-import { FeedbackBar } from './FeedbackBar';
 
 interface Props {
-  skill: GenerateResponse['skill'];
+  skill: GenerateResponse['skill'] & { bookmarked?: number };
 }
 
 export function SkillPreview({ skill }: Props) {
   const [editing, setEditing] = useState(false);
   const [content, setContent] = useState(skill.content);
   const [copied, setCopied] = useState(false);
+  const [bookmarked, setBookmarked] = useState(skill.bookmarked === 1);
 
   useEffect(() => {
     setContent(skill.content);
   }, [skill.content]);
+
+  const toggleBookmark = async () => {
+    const next = !bookmarked;
+    setBookmarked(next); // optimistic
+    try {
+      await fetch(`/api/v1/skills/${skill.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookmarked: next ? 1 : 0 }),
+      });
+    } catch {
+      setBookmarked(!next); // revert on failure
+    }
+  };
 
   const handleCopy = async () => {
     try {
@@ -117,6 +131,21 @@ export function SkillPreview({ skill }: Props) {
               {editing ? '预览' : '编辑'}
             </span>
           </button>
+          <div className="h-px bg-zinc-800 mx-2" />
+          <button
+            onClick={toggleBookmark}
+            className={`group relative flex items-center justify-center w-10 h-10 rounded-lg hover:bg-zinc-700 transition-all ${
+              bookmarked ? 'text-[#FF5C00]' : 'text-zinc-400 hover:text-white'
+            }`}
+            title={bookmarked ? '取消收藏' : '收藏'}
+          >
+            <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: bookmarked ? "'FILL' 1" : "'FILL' 0" }}>
+              bookmark
+            </span>
+            <span className="absolute left-12 bg-zinc-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              {bookmarked ? '已收藏' : '收藏'}
+            </span>
+          </button>
         </div>
       </div>
 
@@ -208,7 +237,19 @@ export function SkillPreview({ skill }: Props) {
         </div>
       )}
 
-      <FeedbackBar skillId={skill.id} />
+      {/* Bookmark */}
+      <div className="flex items-center justify-center gap-3 py-3 border-t border-zinc-900">
+        <span className="text-sm text-zinc-500">{bookmarked ? '已收藏' : '点击收藏这条 skill'}</span>
+        <button
+          onClick={toggleBookmark}
+          className={`material-symbols-outlined text-2xl transition-all ${
+            bookmarked ? 'text-[#FF5C00] scale-110' : 'text-zinc-600 hover:text-zinc-400 hover:scale-110'
+          }`}
+          style={{ fontVariationSettings: bookmarked ? "'FILL' 1" : "'FILL' 0" }}
+        >
+          bookmark
+        </button>
+      </div>
     </div>
   );
 }
