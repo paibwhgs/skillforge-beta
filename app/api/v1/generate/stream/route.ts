@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
   }
 
   const format = body.format || 'claude';
-  if (!['claude', 'markdown'].includes(format)) {
-    return new Response(JSON.stringify({ error: 'format must be claude or markdown' }), { status: 400 });
+  if (!['claude', 'openclaw', 'markdown'].includes(format)) {
+    return new Response(JSON.stringify({ error: 'format must be claude, openclaw, or markdown' }), { status: 400 });
   }
 
   const depth = body.depth || 'quick';
@@ -73,21 +73,30 @@ export async function POST(request: NextRequest) {
         write('log', { type: 'curating', text: 'AI 正在策展提炼...', ts: now() });
 
         let rawContent = '';
+        let tokenCount = 0;
         if (mode === 'auto' && level === 'none') {
-          rawContent = results.length === 0 ? await (await import('@/lib/curator')).curate(domain, results, level, engine, model) : '';
-          // Fallback — just yield the whole content at once
+          const { curate } = await import('@/lib/curator');
+          rawContent = await curate(domain, results, level, format, engine, model);
           write('token', { text: rawContent });
+          console.error(`[stream] fallback seed, rawContent length=${rawContent.length}`);
         } else {
-          for await (const token of curateStream(domain, results, level, engine, model)) {
+          for await (const token of curateStream(domain, results, level, format, engine, model)) {
             rawContent += token;
+            tokenCount++;
             write('token', { text: token });
           }
+          console.error(`[stream] tokens=${tokenCount}, rawContent length=${rawContent.length}`);
+        }
+
+        if (!rawContent.trim()) {
+          throw new Error('AI 返回了空内容，请重试。如果持续失败，可尝试切换模型或换一个领域。');
         }
 
         // Phase 3: Format
         write('log', { type: 'format', text: '格式化输出中...', ts: now() });
         const content = formatSkill(rawContent, format);
         const title = extractTitle(content);
+        console.error(`[stream] content length=${content.length}, title="${title}"`);
 
         // Save
         const userId = getUserId(request);
@@ -107,6 +116,7 @@ export async function POST(request: NextRequest) {
             domain,
             format,
             content,
+            files: undefined,
             sources: results.map((r) => ({ title: r.title, url: r.url })),
             sources_level: level,
             created_at: new Date().toISOString(),

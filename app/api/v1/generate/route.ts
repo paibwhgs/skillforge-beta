@@ -39,7 +39,10 @@ export async function POST(request: NextRequest) {
   let level: 'rich' | 'sparse' | 'none' = 'none';
 
   if (mode === 'direct') {
-    const rawContent = await directGenerate(domain, engine, model);
+    const rawContent = await directGenerate(domain, format, engine, model);
+    if (!rawContent.trim()) {
+      return NextResponse.json({ error: 'AI 返回了空内容，请重试。如果持续失败，可尝试切换模型或换一个领域。' }, { status: 500 });
+    }
     const content = formatSkill(rawContent, format);
     const title = extractTitle(content);
     const userId = getUserId(request);
@@ -53,6 +56,7 @@ export async function POST(request: NextRequest) {
         domain,
         format,
         content,
+        files: undefined,
         sources: [],
         sources_level: 'none' as const,
         created_at: new Date().toISOString(),
@@ -66,7 +70,11 @@ export async function POST(request: NextRequest) {
   level = searchResults.level;
 
   // Phase 2: Curate
-  const rawContent = await curate(domain, results, level, engine, model);
+  const rawContent = await curate(domain, results, level, format, engine, model);
+
+  if (!rawContent.trim()) {
+    return NextResponse.json({ error: 'AI 返回了空内容，请重试。如果持续失败，可尝试切换模型或换一个领域。' }, { status: 500 });
+  }
 
   // Phase 3: Format
   const content = formatSkill(rawContent, format);
@@ -88,6 +96,7 @@ export async function POST(request: NextRequest) {
       domain,
       format,
       content,
+      files: undefined,
       sources: results.map((r) => ({ title: r.title, url: r.url })),
       sources_level: level,
       created_at: new Date().toISOString(),

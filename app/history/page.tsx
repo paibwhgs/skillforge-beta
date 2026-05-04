@@ -83,7 +83,7 @@ export default function HistoryPage() {
   };
 
   const formatLabel = (f: string) =>
-    f === 'claude' ? 'Claude Code' : f === 'markdown' ? 'Markdown' : f;
+    f === 'claude' ? 'Claude Code' : f === 'openclaw' ? 'OpenCLAW' : f === 'markdown' ? 'Markdown' : f;
 
   const modeLabel = (s: SkillRecord) =>
     s.mode === 'direct'

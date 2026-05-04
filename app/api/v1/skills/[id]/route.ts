@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initDB, getSkill, getSkillSources, deleteSkill } from '@/lib/db';
+import type { SkillFile } from '@/types';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   await initDB();
@@ -9,7 +10,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
   const sources = await getSkillSources(id);
-  return NextResponse.json({ skill, sources });
+  const files: SkillFile[] = [];
+  return NextResponse.json({ skill, sources, files });
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

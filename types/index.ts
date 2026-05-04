@@ -5,6 +5,11 @@ export interface SearchResult {
   score: number;
 }
 
+export interface SkillFile {
+  path: string;
+  content: string;
+}
+
 export interface GenerateRequest {
   domain: string;
   format?: 'claude' | 'openclaw' | 'markdown';
@@ -22,6 +27,7 @@ export interface GenerateResponse {
     domain: string;
     format: string;
     content: string;
+    files?: SkillFile[];
     sources: { title: string; url: string }[];
     sources_level: 'rich' | 'sparse' | 'none';
     created_at: string;
@@ -93,6 +99,7 @@ export interface ModelOption {
 }
 
 export const MODEL_OPTIONS: ModelOption[] = [
+  { label: 'DeepSeek V4 Flash', engine: 'deepseek', model: 'deepseek-chat' },
   { label: 'DeepSeek', engine: 'deepseek', model: 'deepseek-chat' },
   { label: 'Qwen3.6 Plus', engine: 'opencode-go', model: 'qwen3.6-plus' },
   { label: 'GLM-5.1', engine: 'opencode-go', model: 'glm-5.1' },

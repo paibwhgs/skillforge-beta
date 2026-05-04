@@ -7,7 +7,7 @@ import type { SkillRecord } from '@/types';
 
 export default function Home() {
   const [domain, setDomain] = useState('');
-  const [format, setFormat] = useState<'claude' | 'markdown'>('claude');
+  const [format, setFormat] = useState<'claude' | 'openclaw' | 'markdown'>('claude');
   const [depth, setDepth] = useState<'quick' | 'deep'>('quick');
   const [searchEnabled, setSearchEnabled] = useState(true);
   const [engine, setEngine] = useState(DEFAULT_MODEL.engine);
@@ -109,7 +109,7 @@ export default function Home() {
                   <div className="flex justify-between items-start mb-4">
                     <span className="material-symbols-outlined text-[#508eff]">terminal</span>
                     <span className="text-[10px] font-label text-zinc-600 uppercase tracking-wider">
-                      {s.format === 'claude' ? 'Claude Code' : 'Markdown'}
+                      {s.format === 'claude' ? 'Claude Code' : s.format === 'openclaw' ? 'OpenCLAW' : 'Markdown'}
                     </span>
                   </div>
                   <h3 className="font-display text-xl text-white mb-2">{s.title}</h3>

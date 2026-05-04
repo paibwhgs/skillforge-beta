@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SkillForge | Skill 编辑器</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#521800",
+                        "on-primary-fixed": "#370e00",
+                        "surface-container": "#1f2020",
+                        "on-background": "#e3e2e2",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "on-tertiary": "#313030",
+                        "surface-container-high": "#292a2a",
+                        "on-tertiary-container": "#2c2b2b",
+                        "surface-container-highest": "#343535",
+                        "outline-variant": "#5b4137",
+                        "surface-tint": "#ffb59a",
+                        "tertiary-container": "#949292",
+                        "surface-container-low": "#1b1c1c",
+                        "tertiary": "#c8c6c5",
+                        "error-container": "#93000a",
+                        "on-secondary-fixed": "#001a43",
+                        "on-surface": "#e3e2e2",
+                        "primary-fixed": "#ffdbce",
+                        "inverse-primary": "#a73a00",
+                        "on-secondary-container": "#00275e",
+                        "on-error-container": "#ffdad6",
+                        "surface": "#121414",
+                        "background": "#121414",
+                        "secondary": "#aec6ff",
+                        "on-primary": "#5a1b00",
+                        "primary-fixed-dim": "#ffb59a",
+                        "surface-variant": "#343535",
+                        "inverse-on-surface": "#303031",
+                        "on-secondary-fixed-variant": "#004397",
+                        "secondary-container": "#508eff",
+                        "surface-dim": "#121414",
+                        "surface-bright": "#383939",
+                        "error": "#ffb4ab",
+                        "on-primary-fixed-variant": "#802a00",
+                        "on-error": "#690005",
+                        "on-secondary": "#002e6b",
+                        "secondary-fixed": "#d8e2ff",
+                        "tertiary-fixed": "#e5e2e1",
+                        "on-surface-variant": "#e4beb1",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "primary": "#ffb59a",
+                        "primary-container": "#ff5c00",
+                        "inverse-surface": "#e3e2e2",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "surface-container-lowest": "#0d0e0f",
+                        "secondary-fixed-dim": "#aec6ff",
+                        "outline": "#ab897d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin": "24px",
+                        "gutter": "16px",
+                        "unit": "4px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Space Grotesk", "Noto Sans SC"],
+                        "label-caps": ["Inter", "Noto Sans SC"],
+                        "body-sm": ["Noto Sans SC", "Inter"],
+                        "body-base": ["Noto Sans SC", "Inter"],
+                        "headline-md": ["Space Grotesk", "Noto Sans SC"],
+                        "code-block": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                        "body-base": ["16px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "code-block": ["14px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "450"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000000; }
+        ::-webkit-scrollbar-thumb { background: #1A1A1A; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #333333; }
+        body { font-family: 'Noto Sans SC', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-base selection:bg-primary-container selection:text-white">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-6 h-14 bg-black/80 backdrop-blur-md border-b border-zinc-900">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-[#FF5C00] tracking-tighter font-['Space_Grotesk']">SkillForge</span>
+<nav class="hidden md:flex gap-6 text-sm"><a class="tracking-tight text-zinc-400 hover:text-zinc-200 transition-colors" href="#">首页</a>
+<a class="tracking-tight hover:text-zinc-200 transition-colors text-white font-medium" href="#">控制台</a>
+<a class="tracking-tight text-zinc-400 hover:text-zinc-200 transition-colors" href="#">文档</a>
+<a class="tracking-tight text-zinc-400 hover:text-zinc-200 transition-colors" href="#">社区</a></nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-[#FF5C00] text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-all active:opacity-80 active:scale-95">新建 Skill</button>
+<span class="material-symbols-outlined text-zinc-400 cursor-pointer hover:text-white transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-zinc-400 cursor-pointer hover:text-white transition-colors" data-icon="settings">settings</span>
+<div class="w-8 h-8 rounded-full bg-zinc-800 overflow-hidden border border-zinc-700">
+<img alt="用户头像" class="w-full h-full object-cover" data-alt="A professional close-up studio portrait of a tech-savvy software developer in their late 20s wearing minimal, high-quality dark clothing. The lighting is low-key with a sharp orange rim light reflecting the brand's Forge Orange aesthetic. The background is a clean, dark monochromatic gradient that emphasizes the subject's intelligent and focused expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNYk49Mt2kGJQzFiou5--o9P48GAHdVOyGOwSX9MxtgvLLXmmo5saBJ5XQx4N0SpXqdVKpAbinhDlnr_umKeM_AR8XR2FYBJM-bZjx54YuclQKpbjObJzhGoeFC76SgVWanwpSO4l-mLKHro4ar1ZHLFZudTlv5WY9G92CqMkS0kxKrAdOY52wa7apsqU3jEwstSvAv0-r4UUR6zgnJbrvS6btXqmbaNsWrckb4nSpJSi1hpcQ7ngdrc3c4jopnlVpH3_MPJ0TiJk"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-14 bottom-0 flex flex-col z-40 bg-zinc-950 w-64 border-r border-zinc-900 text-sm">
+<div class="p-6 border-b border-zinc-900">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-[#FF5C00] rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="terminal">terminal</span>
+</div>
+<div>
+<h2 class="text-[#FF5C00] font-black uppercase tracking-tight">SkillForge</h2>
+<p class="text-[10px] text-zinc-500">v1.0.4-alpha</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 py-4 overflow-y-auto">
+<div class="px-3 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span> 首页
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 bg-zinc-900 text-[#FF5C00] border-r-2 border-[#FF5C00] translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span> 我的 Skill
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span> 数据分析
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-zinc-500 hover:bg-zinc-900/50 hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="extension">extension</span> 模板
+                </a>
+</div>
+</nav>
+<div class="p-4 border-t border-zinc-900 space-y-4">
+<button class="w-full bg-zinc-900 text-[#FF5C00] border border-[#FF5C00]/20 py-2 rounded font-bold text-xs uppercase tracking-widest hover:bg-[#FF5C00]/10 transition-colors">升级到专业版</button>
+<div class="px-2 space-y-2">
+<a class="flex items-center gap-3 text-zinc-500 hover:text-zinc-300 text-xs transition-colors" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="help">help</span> 支持
+                </a>
+<a class="flex items-center gap-3 text-zinc-500 hover:text-zinc-300 text-xs transition-colors" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="api">api</span> API 接口
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="ml-64 mt-14 mb-16 min-h-screen p-8 bg-black">
+<!-- Skill Header -->
+<div class="flex justify-between items-start mb-8">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<span class="bg-primary-container/20 text-primary-container px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest border border-primary-container/30">稳定版 v2.1</span>
+<span class="text-zinc-500 text-sm">2 小时前最后编辑</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-background">高级错误处理器</h1>
+<p class="text-zinc-400 mt-2 max-w-2xl font-body-base">用于拦截异步异常并通过 Forge AI 集成生成自动堆栈追踪分析的全能型 Skill。</p>
+</div>
+<!-- Actions Toolbar (Side/Floating Style) -->
+<div class="flex flex-col gap-2 bg-zinc-900/50 backdrop-blur border border-zinc-800 p-2 rounded-xl sticky top-20 shadow-2xl">
+<button class="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-[#FF5C00] text-zinc-400 hover:text-white transition-all group relative" title="复制内容">
+<span class="material-symbols-outlined" data-icon="content_copy">content_copy</span>
+<span class="absolute left-12 bg-zinc-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">复制</span>
+</button>
+<button class="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-[#FF5C00] text-zinc-400 hover:text-white transition-all group relative" title="下载 Markdown">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+<span class="absolute left-12 bg-zinc-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">下载 .md</span>
+</button>
+<div class="h-[1px] bg-zinc-800 mx-2"></div>
+<button class="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-secondary text-zinc-400 hover:text-on-secondary transition-all group relative" title="复刻 Skill">
+<span class="material-symbols-outlined" data-icon="fork_right">fork_right</span>
+<span class="absolute left-12 bg-zinc-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">复刻</span>
+</button>
+<button class="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-zinc-700 text-zinc-400 hover:text-white transition-all group relative" title="分享">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+<span class="absolute left-12 bg-zinc-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">分享</span>
+</button>
+</div>
+</div>
+<!-- Code Editor Section -->
+<section class="mb-12 border border-zinc-900 rounded-xl overflow-hidden bg-[#080808]">
+<div class="flex items-center justify-between px-4 py-2 bg-zinc-950 border-b border-zinc-900">
+<div class="flex gap-2">
+<div class="w-3 h-3 rounded-full bg-zinc-800"></div>
+<div class="w-3 h-3 rounded-full bg-zinc-800"></div>
+<div class="w-3 h-3 rounded-full bg-zinc-800"></div>
+</div>
+<div class="text-[11px] font-code-block text-zinc-500 uppercase tracking-widest">error_handler.ts</div>
+<div class="flex items-center gap-4">
+<span class="text-[10px] text-zinc-600 font-code-block">UTF-8</span>
+<span class="text-[10px] text-zinc-600 font-code-block">TypeScript</span>
+</div>
+</div>
+<div class="p-6 font-code-block text-code-block overflow-x-auto min-h-[400px] leading-relaxed">
+<div class="flex">
+<span class="text-zinc-700 select-none pr-6 text-right w-12">1</span>
+<span><span class="text-secondary">import</span> { ForgeLogger } <span class="text-secondary">from</span> <span class="text-primary-container">"@skillforge/core"</span>;</span>
+</div>
+<div class="flex">
+<span class="text-zinc-700 select-none pr-6 text-right w-12">2</span>
+<span></span>
+</div>
+<div class="flex">
+<span class="text-zinc-700 select-none pr-6 text-right w-12">3</span>
+<span><span class="text-zinc-500">/** </span></span>
+</div>
+<div class="flex">
+<span class="text-zinc-700 select-none pr-6 text-right w-12">4</span>
+<span><span class="text-zinc-500"> * SkillForge 工作流全局错误拦截器 </span></span>
+</div>
+<div class="flex">
+<span class="text-zinc-700 select-none pr-6 text-right w-12">5</span>
+<span><span class="text-zinc-500"> */</span></span>
+</div>
+<div class="flex">
+<span class="text-zinc-700 select-none pr-6 text-right w-12">6</span>
+<span><span class="text-secondary">export const</span> <span class="text-white">errorHandler</span> = <span class="text-secondary">async</span> (err: <span class="text-primary">Error</span>) =&gt; {</span>
+</div>
+<div class="flex">
+<span class="text-zinc-700 select-none pr-6 text-right w-12">7</span>
+<span class="pl-4"><span class="text-secondary">const</span> stats = <span class="text-secondary">await</span> ForgeLogger.<span class="text-white">capture</span>(err);</span>
+</div>
+<div class="flex bg-zinc-900/50 border-l-2 border-primary-container">
+<span class="text-zinc-700 select-none pr-6 text-right w-12">8</span>
+<span class="pl-4 font-bold text-white"><span class="text-secondary">return</span> { status: <span class="text-primary-container">"intercepted"</span>, data: stats.analysis };</span>
+</div>
+<div class="flex">
+<span class="text-zinc-700 select-none pr-6 text-right w-12">9</span>
+<span>};</span>
+</div>
+<!-- Additional code placeholder rows -->
+<div class="flex"><span class="text-zinc-700 select-none pr-6 text-right w-12">10</span><span></span></div>
+<div class="flex"><span class="text-zinc-700 select-none pr-6 text-right w-12">11</span><span class="text-zinc-600">// AI 增强分析块</span></div>
+<div class="flex"><span class="text-zinc-700 select-none pr-6 text-right w-12">12</span><span><span class="text-secondary">if</span> (stats.critical) {</span></div>
+<div class="flex"><span class="text-zinc-700 select-none pr-6 text-right w-12">13</span><span class="pl-4">ForgeLogger.<span class="text-white">alert</span>(<span class="text-primary-container">"SYSTEM_CRITICAL"</span>);</span></div>
+<div class="flex"><span class="text-zinc-700 select-none pr-6 text-right w-12">14</span><span>}</span></div>
+</div>
+</section>
+<!-- Source Tracking & Metadata -->
+<section class="mb-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="md:col-span-2 space-y-6">
+<div class="bg-zinc-950 border border-zinc-900 p-6 rounded-xl">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary-container" data-icon="menu_book">menu_book</span>
+<h3 class="font-headline-md text-headline-md">参考与来源</h3>
+</div>
+<div class="space-y-4">
+<div class="flex items-start justify-between p-3 border border-zinc-900 rounded bg-black hover:border-zinc-700 transition-colors cursor-pointer group">
+<div>
+<h4 class="text-sm font-bold text-white group-hover:text-primary-container transition-colors">V8 引擎错误处理文档</h4>
+<p class="text-xs text-zinc-500 mt-1">深入研究堆栈追踪生成及性能消耗。</p>
+</div>
+<span class="text-[10px] font-code-block text-zinc-600">v8.dev • 2024</span>
+</div>
+<div class="flex items-start justify-between p-3 border border-zinc-900 rounded bg-black hover:border-zinc-700 transition-colors cursor-pointer group">
+<div>
+<h4 class="text-sm font-bold text-white group-hover:text-primary-container transition-colors">SkillForge API 参考</h4>
+<p class="text-xs text-zinc-500 mt-1">@skillforge/core 日志工具库官方文档。</p>
+</div>
+<span class="text-[10px] font-code-block text-zinc-600">docs.skillforge.com • v1.2</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Feedback Section -->
+<div class="bg-zinc-950 border border-zinc-900 p-6 rounded-xl">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary" data-icon="star">star</span>
+<h3 class="font-headline-md text-headline-md">反馈</h3>
+</div>
+<div class="flex items-center gap-1 mb-4">
+<span class="material-symbols-outlined text-primary-container" data-icon="star" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-primary-container" data-icon="star" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-primary-container" data-icon="star" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-primary-container" data-icon="star" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-zinc-700" data-icon="star">star</span>
+<span class="ml-2 text-xs text-zinc-500">(4.0 / 5)</span>
+</div>
+<textarea class="w-full bg-black border border-zinc-800 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary-container focus:border-primary-container outline-none transition-all resize-none h-24 placeholder-zinc-700" placeholder="写下你的评论..."></textarea>
+<button class="w-full mt-3 bg-zinc-900 hover:bg-zinc-800 text-zinc-200 py-2 rounded-lg text-xs font-bold transition-colors">提交评论</button>
+</div>
+</section>
+<!-- Bento Grid Insights (Extra Section for UI depth) -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+<div class="bg-zinc-950 border border-zinc-900 p-4 rounded-xl flex flex-col justify-between aspect-video">
+<span class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">总安装量</span>
+<span class="text-3xl font-display-lg text-white">12.4k</span>
+</div>
+<div class="bg-zinc-950 border border-zinc-900 p-4 rounded-xl flex flex-col justify-between aspect-video">
+<span class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">复杂度评分</span>
+<span class="text-3xl font-display-lg text-secondary">A+</span>
+</div>
+<div class="bg-zinc-950 border border-zinc-900 p-4 rounded-xl flex flex-col justify-between aspect-video md:col-span-2 overflow-hidden relative group">
+<div class="relative z-10">
+<span class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">性能变化</span>
+<span class="text-3xl font-display-lg text-primary-container">-24ms</span>
+</div>
+<div class="absolute bottom-0 right-0 w-32 h-32 opacity-20 grayscale group-hover:grayscale-0 transition-all">
+<img alt="数据可视化" class="w-full h-full object-cover" data-alt="A futuristic, high-density line graph displaying performance metrics. The chart is rendered in a minimalist techno-noir style with glowing Forge Orange lines against a deep black background. Subtle grid lines and data nodes add a sense of precision and scientific analysis, fitting the technical minimalist brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsGKri2ufLzGfBfVf8liWVgiHhnwNXe2PDFFne5H_p9T78UbxbojM01_0TR2e0dBaSIcFG43TuM3Oz0VkCajcm27EQQSJ9ADuMidGchgxfqImRemN6a9sMTH-qn08n6UP2jMJGDFocrM-5P9UNF-3QwKwL1YQK1CkPIYFkBqdv9bd9zKV0ZGvTPwrpT9VbcRLBFA54RjtxmlosyIu8d1tcXkL_IsTVlzjF6ixL-1Y0xJINgbb5VA3UwdE3uNhlgO3iUCro5UcdNiQ"/>
+</div>
+</div>
+</section>
+</main>
+<!-- Chat Interface (Bottom Fixed) -->
+<div class="fixed bottom-4 right-8 left-72 z-50">
+<div class="max-w-4xl mx-auto">
+<div class="bg-[#121212] border border-zinc-800 shadow-2xl rounded-2xl flex flex-col overflow-hidden">
+<div class="p-2 border-b border-zinc-900 flex items-center justify-between px-4 bg-zinc-950/50">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+<span class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Forge AI 助手</span>
+</div>
+<button class="text-zinc-600 hover:text-zinc-400">
+<span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span>
+</button>
+</div>
+<div class="p-3 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container/10 flex items-center justify-center border border-primary-container/20">
+<span class="material-symbols-outlined text-primary-container text-sm" data-icon="psychology">psychology</span>
+</div>
+<div class="flex-1">
+<input class="w-full bg-transparent border-none focus:ring-0 text-sm text-white placeholder-zinc-600" placeholder='请输入修改建议：例如 "增加更多错误处理细节"...' type="text"/>
+</div>
+<button class="bg-primary-container text-white w-8 h-8 rounded-lg flex items-center justify-center hover:scale-105 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-sm" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center h-16 md:hidden bg-black/90 backdrop-blur-xl border-t border-zinc-800 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] font-['Space_Grotesk'] text-[10px] uppercase tracking-widest">
+<a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-300" href="#">
+<span class="material-symbols-outlined" data-icon="rss_feed">rss_feed</span>
+<span>动态</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#FF5C00] scale-110" href="#">
+<span class="material-symbols-outlined" data-icon="folder_special">folder_special</span>
+<span>库</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-300" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span>工作室</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-600 hover:text-zinc-300" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span>个人中心</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#5a1b00",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "tertiary": "#c8c6c5",
+                        "on-tertiary-container": "#2c2b2b",
+                        "on-secondary-fixed-variant": "#004397",
+                        "error": "#ffb4ab",
+                        "outline": "#ab897d",
+                        "surface-variant": "#343535",
+                        "on-secondary-fixed": "#001a43",
+                        "surface-container-highest": "#343535",
+                        "surface-tint": "#ffb59a",
+                        "on-secondary-container": "#00275e",
+                        "surface-dim": "#121414",
+                        "outline-variant": "#5b4137",
+                        "on-secondary": "#002e6b",
+                        "primary": "#ffb59a",
+                        "surface-bright": "#383939",
+                        "on-primary-fixed": "#370e00",
+                        "on-tertiary": "#313030",
+                        "secondary": "#aec6ff",
+                        "primary-fixed": "#ffdbce",
+                        "on-tertiary-fixed-variant": "#474646",
+                        "inverse-on-surface": "#303031",
+                        "on-error": "#690005",
+                        "on-surface-variant": "#e4beb1",
+                        "surface-container-low": "#1b1c1c",
+                        "inverse-surface": "#e3e2e2",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-tertiary-fixed": "#1c1b1b",
+                        "inverse-primary": "#a73a00",
+                        "tertiary-fixed": "#e5e2e1",
+                        "on-primary-fixed-variant": "#802a00",
+                        "secondary-container": "#508eff",
+                        "surface-container": "#1f2020",
+                        "surface-container-lowest": "#0d0e0f",
+                        "primary-container": "#ff5c00",
+                        "primary-fixed-dim": "#ffb59a",
+                        "on-surface": "#e3e2e2",
+                        "background": "#121414",
+                        "surface": "#121414",
+                        "on-primary-container": "#521800",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "on-background": "#e3e2e2",
+                        "secondary-fixed-dim": "#aec6ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "margin": "24px",
+                        "gutter": "16px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Space Grotesk"],
+                        "body-sm": ["Inter"],
+                        "body-base": ["Inter"],
+                        "code-block": ["JetBrains Mono"],
+                        "headline-md": ["Space Grotesk"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-sm": ["14px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                        "body-base": ["16px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                        "code-block": ["14px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "450"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            color: #e3e2e2;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(8, 8, 8, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid #1A1A1A;
+        }
+    </style>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+    header {
+        font-family: 'Noto Sans SC', sans-serif !important;
+    }
+</style></head>
+<body class="min-h-screen flex flex-col font-body-base">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-black/80 backdrop-blur-xl border-b border-[#1A1A1A] flex justify-between items-center px-6 py-3">
+<div class="flex items-center gap-8">
+<div class="text-xl font-black tracking-tighter font-display-lg text-[#FF5C00]">SkillForge</div>
+<nav class="hidden md:flex items-center ml-12 gap-10"><a class="text-lg text-zinc-500 hover:text-white font-medium px-2 py-2 transition-all" href="#">首页</a><a class="text-lg text-zinc-500 hover:text-white font-medium px-2 py-2 transition-all" href="#">控制台</a><a class="text-lg text-zinc-500 hover:text-white font-medium px-2 py-2 transition-all" href="#">文档</a><a class="text-lg text-zinc-500 hover:text-white font-medium px-2 py-2 transition-all" href="#">社区</a></nav>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-zinc-500 cursor-pointer hover:text-white" data-icon="terminal">terminal</span>
+<button class="bg-[#FF5C00] text-on-primary px-4 py-1.5 font-['Space_Grotesk'] uppercase tracking-widest text-xs font-bold active:scale-95 transition-transform">
+                Sign Up
+            </button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex items-center justify-center pt-20 px-6">
+<div class="w-full max-w-md">
+<!-- Login Card -->
+<div class="glass-panel p-8 rounded-lg shadow-2xl relative overflow-hidden">
+<!-- AI Accent Line -->
+<div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#aec6ff] via-[#ff5c00] to-[#aec6ff]"></div>
+<div class="mb-10 text-center">
+<h1 class="font-headline-md text-headline-md text-white mb-2">登录 SkillForge</h1>
+<p class="font-body-sm text-body-sm text-zinc-500">使用您的账号继续锻造。</p>
+</div>
+<form class="space-y-6">
+<div class="space-y-2">
+<label class="font-label-caps text-label-caps text-zinc-400 uppercase tracking-wider block">电子邮件</label>
+<div class="relative">
+<input class="w-full bg-black border border-[#1A1A1A] px-4 py-3 text-white focus:outline-none focus:border-[#FF5C00] focus:ring-1 focus:ring-[#FF5C00]/20 transition-all font-body-base placeholder:text-zinc-700" placeholder="name@company.com" type="email"/>
+</div>
+</div>
+<div class="space-y-2">
+<div class="flex justify-between items-center">
+<label class="font-label-caps text-label-caps text-zinc-400 uppercase tracking-wider block">密码</label>
+<a class="text-[10px] text-zinc-600 hover:text-[#FF5C00] transition-colors uppercase tracking-widest font-bold" href="#">Forgot Password?</a>
+</div>
+<div class="relative">
+<input class="w-full bg-black border border-[#1A1A1A] px-4 py-3 text-white focus:outline-none focus:border-[#FF5C00] focus:ring-1 focus:ring-[#FF5C00]/20 transition-all font-body-base placeholder:text-zinc-700" placeholder="••••••••" type="password"/>
+</div>
+</div>
+<button class="w-full bg-[#FF5C00] text-white font-bold py-4 px-6 flex justify-center items-center gap-2 hover:bg-[#E65300] transition-colors active:scale-[0.98] transition-transform font-display-lg uppercase tracking-widest text-sm" type="submit">
+<span>立即登录</span>
+<span class="material-symbols-outlined text-sm" data-icon="login">login</span>
+</button>
+</form>
+<div class="mt-8 pt-6 border-t border-[#1A1A1A] text-center">
+<p class="font-body-sm text-body-sm text-zinc-500">
+                        还没有账号? 
+                        <a class="text-[#FF5C00] hover:underline font-bold ml-1" href="#">Create an account</a>
+</p>
+</div>
+</div>
+<!-- Background Decorative Element (Subtle) -->
+<div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[600px] h-[600px] bg-[#FF5C00]/5 rounded-full blur-[120px]"></div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-black border-t border-[#1A1A1A] w-full flex flex-col md:flex-row justify-between items-center px-8 py-12 gap-4">
+<div class="font-['Space_Grotesk'] text-xs text-zinc-500">
+            © 2024 Forge Technical Industries. Built for high-velocity workflows.
+        </div>
+<div class="flex gap-6">
+<a class="font-['Space_Grotesk'] text-xs text-zinc-600 hover:text-[#FF5C00] transition-colors" href="#">Privacy Policy</a>
+<a class="font-['Space_Grotesk'] text-xs text-zinc-600 hover:text-[#FF5C00] transition-colors" href="#">Terms of Service</a>
+<a class="font-['Space_Grotesk'] text-xs text-zinc-600 hover:text-[#FF5C00] transition-colors" href="#">Security Disclosure</a>
+</div>
+</footer>
+</body></html>

@@ -49,7 +49,23 @@ export function SkillPreview({ skill }: Props) {
         ? { text: '部分来源 + AI 补充', class: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' }
         : { text: 'AI 直出', class: 'bg-zinc-800 text-zinc-400 border border-zinc-700' };
 
-  const formatLabel = skill.format === 'claude' ? 'Claude Code' : 'Markdown';
+  const formatLabel = skill.format === 'claude' ? 'Claude Code' : skill.format === 'openclaw' ? 'OpenCLAW' : 'Markdown';
+
+  const handleZipDownload = async () => {
+    if (!skill.files || skill.files.length === 0) return;
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    for (const f of skill.files) {
+      zip.file(f.path, f.content);
+    }
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${skill.title.replace(/\s+/g, '-').toLowerCase()}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-4 animate-fadeIn">
@@ -78,6 +94,18 @@ export function SkillPreview({ skill }: Props) {
               下载 .md
             </span>
           </button>
+          {skill.files && skill.files.length > 0 && (
+            <button
+              onClick={handleZipDownload}
+              className="group relative flex items-center justify-center w-10 h-10 rounded-lg hover:bg-[#FF5C00] text-zinc-400 hover:text-white transition-all"
+              title="下载完整技能包"
+            >
+              <span className="material-symbols-outlined text-lg">folder_zip</span>
+              <span className="absolute left-12 bg-zinc-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                下载 .zip
+              </span>
+            </button>
+          )}
           <div className="h-px bg-zinc-800 mx-2" />
           <button
             onClick={() => setEditing(!editing)}

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SkillForge | 锻造你的未来</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&amp;family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            width: 1em;
+            height: 1em;
+        }
+        body {
+            background-color: #000000;
+            color: #e3e2e2;
+        }
+        .forge-gradient-border {
+            position: relative;
+            background: #080808;
+            border: 1px solid transparent;
+            background-clip: padding-box;
+        }
+        .forge-gradient-border::after {
+            content: '';
+            position: absolute;
+            top: -1px; bottom: -1px; left: -1px; right: -1px;
+            background: linear-gradient(135deg, #508eff 0%, #ff5c00 100%);
+            z-index: -1;
+            border-radius: inherit;
+            opacity: 0.3;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-container": "#521800",
+                      "on-primary-fixed": "#370e00",
+                      "surface-container": "#1f2020",
+                      "on-background": "#e3e2e2",
+                      "on-tertiary-fixed": "#1c1b1b",
+                      "on-tertiary": "#313030",
+                      "surface-container-high": "#292a2a",
+                      "on-tertiary-container": "#2c2b2b",
+                      "surface-container-highest": "#343535",
+                      "outline-variant": "#5b4137",
+                      "surface-tint": "#ffb59a",
+                      "tertiary-container": "#949292",
+                      "surface-container-low": "#1b1c1c",
+                      "tertiary": "#c8c6c5",
+                      "error-container": "#93000a",
+                      "on-secondary-fixed": "#001a43",
+                      "on-surface": "#e3e2e2",
+                      "primary-fixed": "#ffdbce",
+                      "inverse-primary": "#a73a00",
+                      "on-secondary-container": "#00275e",
+                      "on-error-container": "#ffdad6",
+                      "surface": "#121414",
+                      "background": "#121414",
+                      "secondary": "#aec6ff",
+                      "on-primary": "#5a1b00",
+                      "primary-fixed-dim": "#ffb59a",
+                      "surface-variant": "#343535",
+                      "inverse-on-surface": "#303031",
+                      "on-secondary-fixed-variant": "#004397",
+                      "secondary-container": "#508eff",
+                      "surface-dim": "#121414",
+                      "surface-bright": "#383939",
+                      "error": "#ffb4ab",
+                      "on-primary-fixed-variant": "#802a00",
+                      "on-error": "#690005",
+                      "on-secondary": "#002e6b",
+                      "secondary-fixed": "#d8e2ff",
+                      "tertiary-fixed": "#e5e2e1",
+                      "on-surface-variant": "#e4beb1",
+                      "on-tertiary-fixed-variant": "#474646",
+                      "primary": "#ffb59a",
+                      "primary-container": "#ff5c00",
+                      "inverse-surface": "#e3e2e2",
+                      "tertiary-fixed-dim": "#c8c6c5",
+                      "surface-container-lowest": "#0d0e0f",
+                      "secondary-fixed-dim": "#aec6ff",
+                      "outline": "#ab897d"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "margin": "24px",
+                      "gutter": "16px",
+                      "unit": "4px",
+                      "container-max": "1440px"
+              },
+              "fontFamily": {
+                      "display-lg": ["Noto Sans SC", "Space Grotesk"],
+                      "label-caps": ["Noto Sans SC", "Inter"],
+                      "body-sm": ["Noto Sans SC", "Inter"],
+                      "body-base": ["Noto Sans SC", "Inter"],
+                      "headline-md": ["Noto Sans SC", "Space Grotesk"],
+                      "code-block": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                      "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "body-sm": ["14px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                      "body-base": ["16px", {"lineHeight": "1.5", "letterSpacing": "0", "fontWeight": "400"}],
+                      "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "code-block": ["14px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "450"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="font-body-base text-on-background selection:bg-primary-container selection:text-white">
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-16 bg-black border-b border-zinc-900 font-['Noto_Sans_SC']">
+<div class="flex items-center gap-8"><span class="text-2xl font-bold text-[#FF5C00] tracking-tighter">SkillForge</span>
+<div class="hidden md:flex items-center gap-10 text-lg ml-8">
+<a class="text-[#FF5C00] relative pb-2 font-bold" href="#">
+        首页
+        <span class="absolute bottom-0 left-0 w-full h-[3px] bg-[#FF5C00]"></span>
+</a>
+<a class="text-zinc-500 hover:text-zinc-200 transition-colors font-medium" href="#">控制台</a>
+<a class="text-zinc-500 hover:text-zinc-200 transition-colors font-medium" href="#">文档</a>
+<a class="text-zinc-500 hover:text-zinc-200 transition-colors font-medium" href="#">社区</a>
+</div></div>
+<div class="flex items-center gap-4">
+<a class="text-zinc-500 hover:text-zinc-200 transition-colors font-medium mr-6" href="#">登录</a><button class="bg-[#FF5C00] text-white px-5 py-1.5 text-sm font-bold hover:opacity-90 active:scale-95 transition-all ml-2">
+    新建 Skill
+</button>
+</div>
+</nav>
+<main class="pt-14 pb-20 md:pb-0 min-h-screen flex flex-col items-center">
+<!-- Hero & Generation Input -->
+<section class="w-full max-w-5xl px-6 py-20 flex flex-col items-center text-center">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#FF5C00]/30 bg-[#FF5C00]/5 text-[#FF5C00] text-[10px] font-bold uppercase tracking-widest mb-6">
+<span class="material-symbols-outlined text-sm" data-icon="bolt">bolt</span>
+                AI 驱动的技能合成
+            </div>
+<h1 class="font-display-lg text-display-lg mb-4 text-white">
+                加速你的 <span class="text-primary-container">技术栈</span>
+</h1>
+<p class="text-zinc-400 max-w-2xl text-body-base mb-12">
+                在数秒内生成针对任何领域的高密度学习路径、架构文档和实现指南。
+            </p>
+<!-- Main Input Container -->
+<div class="w-full max-w-3xl forge-gradient-border p-1 rounded-xl">
+<div class="bg-black rounded-lg p-2 flex flex-col">
+<div class="flex items-center px-4 py-2 border-b border-zinc-900/50">
+<span class="material-symbols-outlined text-zinc-500 mr-3" data-icon="terminal">terminal</span>
+<input class="w-full bg-transparent border-none focus:ring-0 text-white font-code-block text-body-base placeholder:text-zinc-700" placeholder="输入一个领域 (例如：Go 后端开发)" type="text"/>
+<button class="bg-primary-container text-white px-6 py-2 rounded font-bold hover:opacity-90 transition-opacity">
+                            铸造
+                        </button>
+</div>
+<!-- Controls Row -->
+<div class="flex flex-wrap items-center justify-between gap-4 p-3 bg-zinc-950/50">
+<div class="flex items-center gap-4">
+<!-- Mode Toggle -->
+<div class="flex bg-black border border-zinc-900 rounded p-0.5">
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-zinc-900 text-white rounded">
+                                    联网搜索
+                                </button>
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300">
+                                    AI 直出
+                                </button>
+</div>
+<span class="text-[10px] font-label-caps text-zinc-600">Tavily + Dashscope</span>
+</div>
+<div class="flex items-center gap-4">
+<!-- Format Selection -->
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-label-caps text-zinc-600">格式:</span>
+<div class="flex bg-black border border-zinc-900 rounded p-0.5">
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-zinc-900 text-white rounded">
+                                        Claude Code (.md)
+                                    </button>
+<button class="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:text-zinc-300">
+                                        Markdown
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid for Popular Skills / Recent -->
+<section class="w-full max-w-container-max px-6 py-12">
+<div class="flex items-center justify-between mb-8">
+<h2 class="font-headline-md text-headline-md text-white flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-container" data-icon="auto_awesome">auto_awesome</span>
+                    最近生成
+                </h2>
+<a class="text-sm font-bold text-zinc-500 hover:text-white transition-colors flex items-center gap-1" href="#">
+                    查看库
+                    <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 h-auto">
+<!-- Large Featured Card -->
+<div class="md:col-span-2 lg:col-span-3 row-span-2 group relative overflow-hidden rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-zinc-700 transition-all">
+<div class="absolute inset-0 opacity-20">
+<img alt="抽象数据结构可视化" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4T03OwlE7BcRzCbTmTAwD6f_I87Eo8RGTRkom67JsXyRgj3yz0IjVZLSaYAucTmRpcXhdIODwjprazW75jtDpRxGDhzFbOpj4bvae3uNI5VGXm3aIhtSb9hM3zNjayqfwPI3V8PsEPwWIIUckLm0C30uOR68IsMMkv-Bm6Tgr0SCCnJQVsFgqj5hDFVEnP63LX8fnvViEEGnaxJWl1aS6-xjxe1053BO9QIdNp35CEOqJiMgAlSSyF1S6JDfyjFIRvkRl5K4hp38"/>
+</div>
+<div class="relative p-8 h-full flex flex-col justify-end">
+<div class="mb-4">
+<span class="px-2 py-1 bg-primary-container text-white text-[10px] font-black uppercase tracking-tighter">热门生成</span>
+</div>
+<h3 class="font-display-lg text-2xl text-white mb-2">Kubernetes Operator 模式</h3>
+<p class="text-zinc-400 text-sm mb-6 max-w-sm">深入探讨如何使用 Kubebuilder 和 Go 运行时控制器编写自定义控制器。</p>
+<div class="flex items-center gap-4 text-zinc-500 text-xs">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span> 12分钟前</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm" data-icon="visibility">visibility</span> 1.4k 浏览</span>
+</div>
+</div>
+</div>
+<!-- Medium Card 1 -->
+<div class="md:col-span-2 lg:col-span-3 h-64 group p-6 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-zinc-700 transition-all flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-[#508eff]" data-icon="terminal" data-weight="fill">terminal</span>
+<span class="text-[10px] font-label-caps text-zinc-600">命令行工具</span>
+</div>
+<h3 class="font-headline-md text-xl text-white mb-2">Rust 内存管理</h3>
+<p class="text-zinc-400 text-sm line-clamp-2">为从 C++ 转到 Rust 的开发者解释所有权、借用和生命周期。</p>
+</div>
+<div class="flex items-center justify-between border-t border-zinc-900 pt-4 mt-4">
+<div class="flex -space-x-2">
+<div class="w-6 h-6 rounded-full border border-black bg-zinc-800"></div>
+<div class="w-6 h-6 rounded-full border border-black bg-zinc-700"></div>
+</div>
+<button class="text-xs font-bold text-zinc-400 hover:text-white">查看指南</button>
+</div>
+</div>
+<!-- Small Grid Items -->
+<div class="lg:col-span-2 p-4 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-[#FF5C00]/30 transition-all">
+<div class="flex items-center gap-3 mb-3">
+<div class="w-8 h-8 rounded bg-zinc-900 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-400 text-lg" data-icon="api">api</span>
+</div>
+<h4 class="text-white text-sm font-bold">GraphQL 联合查询</h4>
+</div>
+<div class="h-2 w-full bg-zinc-900 rounded-full overflow-hidden">
+<div class="h-full bg-[#FF5C00] w-3/4"></div>
+</div>
+<div class="mt-2 flex justify-between text-[10px] text-zinc-600 font-label-caps">
+<span>完成进度</span>
+<span>75%</span>
+</div>
+</div>
+<div class="lg:col-span-2 p-4 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-[#FF5C00]/30 transition-all">
+<div class="flex items-center gap-3 mb-3">
+<div class="w-8 h-8 rounded bg-zinc-900 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-400 text-lg" data-icon="security">security</span>
+</div>
+<h4 class="text-white text-sm font-bold">JWT 最佳实践</h4>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 bg-zinc-900 text-zinc-500 rounded text-[10px] font-bold">Node.js</span>
+<span class="px-2 py-0.5 bg-zinc-900 text-zinc-500 rounded text-[10px] font-bold">安全</span>
+</div>
+</div>
+<div class="lg:col-span-2 p-4 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-[#508eff]/30 transition-all">
+<div class="flex items-center gap-3 mb-3">
+<div class="w-8 h-8 rounded bg-zinc-900 flex items-center justify-center">
+<span class="material-symbols-outlined text-zinc-400 text-lg" data-icon="database">database</span>
+</div>
+<h4 class="text-white text-sm font-bold">Postgres 索引</h4>
+</div>
+<p class="text-zinc-600 text-xs">最近有 4 位队友在文档中查看。</p>
+</div>
+</div>
+</section>
+<!-- Technical Features -->
+<section class="w-full bg-zinc-950 border-t border-zinc-900 mt-20 px-6 py-24">
+<div class="max-w-container-max mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+<div class="flex flex-col gap-4">
+<span class="material-symbols-outlined text-primary-container text-4xl" data-icon="psychology">psychology</span>
+<h3 class="font-headline-md text-white">AI 直出引擎</h3>
+<p class="text-zinc-500 text-sm">利用 DeepSeek 的内部推理能力获取纯粹的架构知识，不受网络噪音干扰。</p>
+</div>
+<div class="flex flex-col gap-4">
+<span class="material-symbols-outlined text-secondary text-4xl" data-icon="travel_explore">travel_explore</span>
+<h3 class="font-headline-md text-white">Tavily 合成</h3>
+<p class="text-zinc-500 text-sm">实时网页抓取并合成最新的 API 文档和技术发布信息。</p>
+</div>
+<div class="flex flex-col gap-4">
+<span class="material-symbols-outlined text-primary-container text-4xl" data-icon="code">code</span>
+<h3 class="font-headline-md text-white">Claude Code 就绪</h3>
+<p class="text-zinc-500 text-sm">输出完美格式化的 .md 文件，针对 Claude 的上下文窗口和工具链进行了优化。</p>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center h-16 md:hidden bg-black/90 backdrop-blur-xl border-t border-zinc-800 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+<a class="flex flex-col items-center justify-center text-[#FF5C00] scale-110 font-['Noto_Sans_SC'] text-[10px] uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="rss_feed">rss_feed</span>
+<span>动态</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-600 font-['Noto_Sans_SC'] text-[10px] uppercase tracking-widest hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="folder_special">folder_special</span>
+<span>库</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-600 font-['Noto_Sans_SC'] text-[10px] uppercase tracking-widest hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span>工作室</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-600 font-['Noto_Sans_SC'] text-[10px] uppercase tracking-widest hover:text-zinc-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span>个人</span>
+</a>
+</nav>
+<!-- Footer Decoration -->
+<footer class="w-full border-t border-zinc-900 bg-black px-6 py-8 flex flex-col md:flex-row justify-between items-center text-zinc-600 text-xs gap-4 mb-16 md:mb-0">
+<div class="flex items-center gap-4">
+<span class="font-bold text-zinc-400">SkillForge v1.0.4-alpha</span>
+<span class="h-1 w-1 bg-zinc-800 rounded-full"></span>
+<a class="hover:text-white transition-colors" href="#">隐私政策</a>
+<a class="hover:text-white transition-colors" href="#">服务条款</a>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                系统运行正常
+            </div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="api">api</span>
+                API 已连接
+            </div>
+</div>
+</footer>
+</body></html>

@@ -33,6 +33,8 @@ export function formatSkill(content: string, format: string): string {
   switch (format) {
     case 'claude':
       return formatClaudeCode(content);
+    case 'openclaw':
+      return formatClaudeCode(content);
     case 'markdown':
       return formatMarkdown(content);
     default:

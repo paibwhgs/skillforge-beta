@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { WorkspaceLog } from '@/components/WorkspaceLog';
+import { DEFAULT_MODEL } from '@/types';
+import type { SkillFile } from '@/types';
 
 interface LogEntry {
   type: 'search' | 'check' | 'curating' | 'format' | 'error' | 'info';
@@ -27,14 +29,16 @@ function WorkspaceContent() {
   const [streaming, setStreaming] = useState(true);
   const [error, setError] = useState('');
   const [skillId, setSkillId] = useState<string | null>(null);
+  const [files, setFiles] = useState<SkillFile[]>([]);
+  const [activeFilePath, setActiveFilePath] = useState<string>('');
   const [progress, setProgress] = useState(0);
 
   const domain = searchParams.get('domain') || '';
   const format = searchParams.get('format') || 'claude';
   const depth = searchParams.get('depth') || 'quick';
   const mode = searchParams.get('mode') || 'auto';
-  const engine = searchParams.get('engine') || 'deepseek';
-  const model = searchParams.get('model') || 'deepseek-chat';
+  const engine = searchParams.get('engine') || DEFAULT_MODEL.engine;
+  const model = searchParams.get('model') || DEFAULT_MODEL.model;
 
   const addLog = useCallback((type: LogEntry['type'], text: string) => {
     setLogs((prev) => [
@@ -94,20 +98,36 @@ function WorkspaceContent() {
                   case 'token':
                     accumulatedContent += data.text;
                     setContent(accumulatedContent);
+                    console.log('[workspace] token', { len: data.text?.length, total: accumulatedContent.length });
                     break;
 
                   case 'source':
                     setSources((prev) => [...prev, { title: data.title, url: data.url }]);
                     break;
 
+                  case 'file':
+                    setFiles((prev) => {
+                      const next = [...prev, { path: data.path, content: data.content }];
+                      if (next.length === 1) setActiveFilePath(data.path);
+                      return next;
+                    });
+                    break;
+
                   case 'done':
+                    console.log('[workspace] done event', { contentLen: data.skill.content?.length, title: data.skill.title });
                     setProgress(100);
                     setStreaming(false);
+                    setContent(data.skill.content);
                     setSkillId(data.skill.id);
+                    if (data.skill.files) {
+                      setFiles(data.skill.files);
+                      if (data.skill.files.length > 0) setActiveFilePath(data.skill.files[0].path);
+                    }
                     addLog('check', 'Skill 生成完成！');
                     break;
 
                   case 'error':
+                    console.error('[workspace] error event', data.error);
                     setError(data.error);
                     setStreaming(false);
                     addLog('error', data.error);
@@ -268,22 +288,55 @@ function WorkspaceContent() {
               <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
             </div>
           </div>
+          {/* File Tabs (for OpenCLAW multi-file packages) */}
+          {files.length > 0 && (
+            <div className="flex items-center gap-1 px-4 py-1.5 bg-zinc-950 border-b border-zinc-900 overflow-x-auto">
+              <button
+                onClick={() => setActiveFilePath('')}
+                className={`shrink-0 px-2.5 py-1 rounded text-[10px] font-mono transition-colors ${
+                  activeFilePath === ''
+                    ? 'bg-[#FF5C00]/20 text-[#FF5C00] border border-[#FF5C00]/30'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                SKILL.md
+              </button>
+              {files.map((f) => (
+                <button
+                  key={f.path}
+                  onClick={() => setActiveFilePath(f.path)}
+                  className={`shrink-0 px-2.5 py-1 rounded text-[10px] font-mono transition-colors ${
+                    activeFilePath === f.path
+                      ? 'bg-[#FF5C00]/20 text-[#FF5C00] border border-[#FF5C00]/30'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {f.path}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="flex-1 p-6 font-mono text-sm overflow-y-auto custom-scrollbar bg-[#080808]">
-            {content ? (
-              <pre ref={contentRef} className="text-zinc-300 whitespace-pre-wrap leading-relaxed">
-                {content}
-                {streaming && (
-                  <span className="inline-block w-2 h-4 bg-[#FF5C00] ml-0.5 animate-pulse" />
-                )}
-              </pre>
-            ) : (
-              <div className="text-zinc-600 h-full flex items-center justify-center">
-                <div className="text-center">
-                  <span className="material-symbols-outlined text-3xl mb-2 block">auto_awesome</span>
-                  <p className="text-xs">等待 AI 生成内容...</p>
+            {(() => {
+              const displayContent = activeFilePath
+                ? files.find((f) => f.path === activeFilePath)?.content || ''
+                : content;
+              return displayContent ? (
+                <pre ref={contentRef} className="text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                  {displayContent}
+                  {streaming && !activeFilePath && (
+                    <span className="inline-block w-2 h-4 bg-[#FF5C00] ml-0.5 animate-pulse" />
+                  )}
+                </pre>
+              ) : (
+                <div className="text-zinc-600 h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <span className="material-symbols-outlined text-3xl mb-2 block">auto_awesome</span>
+                    <p className="text-xs">等待 AI 生成内容...</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         </div>
 

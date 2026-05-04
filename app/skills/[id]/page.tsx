@@ -6,7 +6,7 @@ import { SkillPreview } from '@/components/SkillPreview';
 import { FeedbackBar } from '@/components/FeedbackBar';
 import { ChatPanel } from '@/components/ChatPanel';
 import { useAuth } from '@/components/AuthProvider';
-import type { SkillRecord } from '@/types';
+import type { SkillRecord, SkillFile } from '@/types';
 
 interface SourceItem {
   title: string;
@@ -19,6 +19,8 @@ export default function SkillDetailPage() {
   const { user } = useAuth();
   const [skill, setSkill] = useState<SkillRecord | null>(null);
   const [sources, setSources] = useState<SourceItem[]>([]);
+  const [files, setFiles] = useState<SkillFile[]>([]);
+  const [activeFile, setActiveFile] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -35,6 +37,9 @@ export default function SkillDetailPage() {
         setSources(
           (data.sources || []).map((s: any) => ({ title: s.title, url: s.url }))
         );
+        const skillFiles = (data.files || []) as SkillFile[];
+        setFiles(skillFiles);
+        if (skillFiles.length > 0) setActiveFile(skillFiles[0].path);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -108,7 +113,7 @@ export default function SkillDetailPage() {
                     {modeLabel.text}
                   </span>
                   <span className="text-[10px] font-mono text-zinc-500">
-                    {skill.format === 'claude' ? 'Claude Code' : 'Markdown'}
+                    {skill.format === 'claude' ? 'Claude Code' : skill.format === 'openclaw' ? 'OpenCLAW' : 'Markdown'}
                   </span>
                   <span className="text-zinc-600 text-[10px] font-mono">
                     {new Date(skill.created_at).toLocaleDateString('zh-CN')}
@@ -120,6 +125,50 @@ export default function SkillDetailPage() {
 
               <div className="h-px bg-zinc-900" />
 
+              {/* File tabs for OpenCLAW packages */}
+              {files.length > 0 && (
+                <div className="border border-zinc-900 rounded-xl overflow-hidden bg-[#080808]">
+                  <div className="flex items-center gap-1 px-2 py-2 bg-zinc-950 border-b border-zinc-900 overflow-x-auto">
+                    {files.map((f) => (
+                      <button
+                        key={f.path}
+                        onClick={() => setActiveFile(f.path)}
+                        className={`shrink-0 px-3 py-1.5 rounded text-[11px] font-mono transition-colors ${
+                          activeFile === f.path
+                            ? 'bg-[#FF5C00]/20 text-[#FF5C00] border border-[#FF5C00]/30'
+                            : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900'
+                        }`}
+                      >
+                        {f.path}
+                      </button>
+                    ))}
+                    <button
+                      onClick={async () => {
+                        const JSZip = (await import('jszip')).default;
+                        const zip = new JSZip();
+                        for (const f of files) {
+                          zip.file(f.path, f.content);
+                        }
+                        const blob = await zip.generateAsync({ type: 'blob' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${skill.title.replace(/\s+/g, '-').toLowerCase()}.zip`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      }}
+                      className="shrink-0 px-3 py-1.5 rounded text-[11px] font-bold text-zinc-500 hover:text-white hover:bg-zinc-900 transition-colors flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-sm">folder_zip</span>
+                      .zip
+                    </button>
+                  </div>
+                  <pre className="p-4 text-sm font-mono leading-relaxed text-zinc-300 whitespace-pre-wrap max-h-[400px] overflow-y-auto">
+                    {files.find((f) => f.path === activeFile)?.content || ''}
+                  </pre>
+                </div>
+              )}
+
               <SkillPreview
                 skill={{
                   id: skill.id,
@@ -127,6 +176,7 @@ export default function SkillDetailPage() {
                   domain: skill.domain,
                   format: skill.format,
                   content: skill.content,
+                  files,
                   sources,
                   sources_level: sourcesLevel,
                   created_at: skill.created_at,

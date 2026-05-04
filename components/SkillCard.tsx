@@ -59,7 +59,7 @@ export function SkillCard({ skill, variant = 'default' }: Props) {
         <p className="text-xs text-zinc-500 mb-4 line-clamp-2">{skill.domain}</p>
         <div className="flex gap-2">
           <span className="px-2 py-1 bg-zinc-900 text-zinc-500 rounded text-[9px] font-label uppercase tracking-wider">
-            {skill.format === 'claude' ? 'Claude Code' : 'Markdown'}
+            {skill.format === 'claude' ? 'Claude Code' : skill.format === 'openclaw' ? 'OpenCLAW' : 'Markdown'}
           </span>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { createClient, type Row, type Client } from '@libsql/client';
 import { v4 as uuid } from 'uuid';
-import type { SkillRecord, SkillSource, UserRecord } from '@/types';
+import type { SkillRecord, SkillSource, SkillFile, UserRecord } from '@/types';
 
 let db: Client | null = null;
 
@@ -96,6 +96,16 @@ export async function initDB() {
     )
   `);
   await c.execute('CREATE INDEX IF NOT EXISTS idx_chat_skill ON skill_chat_messages(skill_id)');
+  await c.execute(`
+    CREATE TABLE IF NOT EXISTS skill_files (
+      id TEXT PRIMARY KEY,
+      skill_id TEXT NOT NULL,
+      path TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  await c.execute('CREATE INDEX IF NOT EXISTS idx_skill_files ON skill_files(skill_id)');
   // Migrate existing tables — add columns that may not exist yet
   for (const stmt of [
     "ALTER TABLE skills ADD COLUMN user_id TEXT DEFAULT ''",
@@ -221,8 +231,28 @@ export async function deleteSkill(id: string): Promise<boolean> {
   const c = getDb();
   await c.execute({ sql: 'DELETE FROM skill_sources WHERE skill_id = ?', args: [id] });
   await c.execute({ sql: 'DELETE FROM skill_chat_messages WHERE skill_id = ?', args: [id] });
+  await c.execute({ sql: 'DELETE FROM skill_files WHERE skill_id = ?', args: [id] });
   const result = await c.execute({ sql: 'DELETE FROM skills WHERE id = ?', args: [id] });
   return result.rowsAffected > 0;
+}
+
+export async function insertSkillFiles(skillId: string, files: SkillFile[]): Promise<void> {
+  const c = getDb();
+  for (const f of files) {
+    await c.execute({
+      sql: 'INSERT INTO skill_files (id, skill_id, path, content) VALUES (?, ?, ?, ?)',
+      args: [uuid(), skillId, f.path, f.content],
+    });
+  }
+}
+
+export async function getSkillFiles(skillId: string): Promise<SkillFile[]> {
+  const c = getDb();
+  const rows = await c.execute({
+    sql: 'SELECT path, content FROM skill_files WHERE skill_id = ? ORDER BY path ASC',
+    args: [skillId],
+  });
+  return rows.rows.map((r) => ({ path: String(r.path), content: String(r.content) }));
 }
 
 export async function getChatMessages(skillId: string): Promise<{ role: string; content: string }[]> {

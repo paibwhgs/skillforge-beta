@@ -70,6 +70,8 @@ export async function* chatStreamOpenCodeGo(opts: ChatOpts & { model: string }):
   const apiKey = process.env.OPENCODE_GO_API_KEY;
   if (!apiKey) throw new Error('OPENCODE_GO_API_KEY not configured');
 
+  console.error(`[llm-stream] opencode-go request: model=${opts.model}, systemLen=${opts.system?.length}, userLen=${opts.user?.length}`);
+
   const res = await fetch(`${OPENCODE_GO_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -88,8 +90,11 @@ export async function* chatStreamOpenCodeGo(opts: ChatOpts & { model: string }):
     }),
   });
 
+  console.error(`[llm-stream] opencode-go response status=${res.status}`);
+
   if (!res.ok) {
     const text = await res.text();
+    console.error(`[llm-stream] opencode-go error body=${text.slice(0, 500)}`);
     throw new Error(`OpenCode Go API error (${res.status}): ${text}`);
   }
 

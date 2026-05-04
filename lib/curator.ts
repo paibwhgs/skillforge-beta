@@ -1,6 +1,7 @@
 import { chat, chatOpenCodeGo } from './llm';
 import { chatStream, chatStreamOpenCodeGo } from './llm-stream';
 import type { SearchResult } from '@/types';
+import { DEFAULT_MODEL } from '@/types';
 import { seeds } from '@/seeds/skills';
 
 const CURATION_SYSTEM = `You are an AI Skill curator. Your job is to synthesize internet search results into a high-quality, immediately usable AI Skill file.
@@ -10,6 +11,7 @@ const CURATION_SYSTEM = `You are an AI Skill curator. Your job is to synthesize 
 2. **Merge similar themes**: Combine overlapping ideas from different sources into cohesive rules.
 3. **Prioritize community-validated content**: Patterns mentioned by multiple sources or with concrete examples get priority.
 4. **Be honest about gaps**: If search results lack certain aspects, note it rather than fabricating.
+5. **Be comprehensive**: Use comparison tables, code examples in multiple languages where relevant, and ecosystem/tool recommendations.
 
 ## What NOT to do
 - Do NOT copy original text passages (copyright risk)
@@ -22,9 +24,11 @@ const CURATION_SYSTEM = `You are an AI Skill curator. Your job is to synthesize 
 Every generated skill MUST contain:
 1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code)
 2. **When to use**: Specific scenarios that trigger this skill
-3. **Rules**: Clear, actionable, verifiable instructions
-4. **Examples**: Concrete before/after examples adapted from search results
-5. **Boundaries**: What NOT to do, when to stop
+3. **Core Rules**: Clear, actionable, verifiable instructions
+4. **Tool & Ecosystem Guide**: Recommended libraries, frameworks, tools with brief comparisons (use tables when comparing 3+ options)
+5. **Code Examples**: At least 2-3 concrete before/after or pattern examples adapted from search results, with code blocks
+6. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns
+7. **Sources**: Link each source used
 
 ## Output format
 ---
@@ -38,16 +42,24 @@ description: "One-line description of what this skill does and when to use it"
 - Scenario 1
 - Scenario 2
 
-## Rules
+## Core Rules
 1. Rule with clear action
 2. Rule with clear action
 
-## Examples
-### Example 1: descriptive title
-**User**: what the user says
-**Assistant**: what the assistant should do
+## Tool & Ecosystem Guide
+| Tool | Purpose | Best for | Notes |
+|------|---------|----------|-------|
+| ...  | ...     | ...      | ...   |
 
-## Boundaries
+## Code Examples
+### Example 1: descriptive title
+\`\`\`language
+// code here
+\`\`\`
+
+**Why this works**: brief explanation
+
+## Common Pitfalls & Boundaries
 - Don't do X
 - Stop when Y
 - Escalate Z cases
@@ -56,6 +68,8 @@ description: "One-line description of what this skill does and when to use it"
 - [Title](URL)
 - [Title](URL)
 `;
+
+const CURATION_SYSTEM_OPENCLAW = CURATION_SYSTEM;
 
 function buildCuratorPrompt(domain: string, results: SearchResult[]): string {
   const resultsBlock = results
@@ -80,14 +94,16 @@ const DIRECT_SYSTEM = `You are an AI Skill author. Your job is to generate a hig
 1. **Focus on actionable patterns**: Provide concrete workflows, prompt structures, and interaction patterns.
 2. **Be specific**: Give real examples and precise instructions, not vague advice.
 3. **Acknowledge limitations**: You are generating from existing knowledge, not live research. If you're uncertain about something, state it clearly.
+4. **Be comprehensive**: Use comparison tables, code examples in multiple languages where relevant, and ecosystem/tool recommendations.
 
 ## Required skill structure
 Every generated skill MUST contain:
 1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code)
 2. **When to use**: Specific scenarios that trigger this skill
-3. **Rules**: Clear, actionable, verifiable instructions
-4. **Examples**: Concrete before/after examples
-5. **Boundaries**: What NOT to do, when to stop
+3. **Core Rules**: Clear, actionable, verifiable instructions
+4. **Tool & Ecosystem Guide**: Recommended libraries, frameworks, tools with brief comparisons (use tables when comparing 3+ options)
+5. **Code Examples**: At least 2-3 concrete before/after or pattern examples, with code blocks
+6. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns
 
 ## Output format
 ---
@@ -101,49 +117,124 @@ description: "One-line description of what this skill does and when to use it"
 - Scenario 1
 - Scenario 2
 
-## Rules
+## Core Rules
 1. Rule with clear action
 2. Rule with clear action
 
-## Examples
-### Example 1: descriptive title
-**User**: what the user says
-**Assistant**: what the assistant should do
+## Tool & Ecosystem Guide
+| Tool | Purpose | Best for | Notes |
+|------|---------|----------|-------|
+| ...  | ...     | ...      | ...   |
 
-## Boundaries
+## Code Examples
+### Example 1: descriptive title
+\`\`\`language
+// code here
+\`\`\`
+
+**Why this works**: brief explanation
+
+## Common Pitfalls & Boundaries
 - Don't do X
 - Stop when Y
 - Escalate Z cases
 
 **Note**: This skill was generated from AI knowledge without web search. For the most up-to-date information, consider enabling web search.`;
 
-// LLM routing helpers
-function callLLM(
+const DIRECT_SYSTEM_OPENCLAW = DIRECT_SYSTEM;
+
+// LLM routing helpers with cross-backend fallback
+// Tries the configured engine first; if it fails, automatically falls back to the other.
+async function callLLM(
   system: string, user: string,
   engine?: string, model?: string,
   temperature = 0.7,
 ): Promise<string> {
-  if (engine === 'opencode-go') {
-    return chatOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature });
+  const first = engine === 'opencode-go'
+    ? () => chatOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature })
+    : () => chat({ system, user, temperature });
+
+  const second = engine === 'opencode-go'
+    ? () => chat({ system, user, temperature })
+    : () => chatOpenCodeGo({ system, user, model: model || (DEFAULT_MODEL as any).model || 'qwen3.6-plus', temperature });
+
+  try {
+    return await first();
+  } catch (err1: any) {
+    console.error(`[curator] Primary LLM failed (${err1.message}), trying secondary backend`);
+    try {
+      return await second();
+    } catch (err2: any) {
+      throw new Error(`All LLM backends failed. Primary: ${err1.message} | Secondary: ${err2.message}`);
+    }
   }
-  return chat({ system, user, temperature });
 }
 
-function callLLMStream(
+async function* callLLMStream(
   system: string, user: string,
   engine?: string, model?: string,
   temperature = 0.7,
-) {
+): AsyncGenerator<string> {
   if (engine === 'opencode-go') {
-    return chatStreamOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature });
+    // Try OpenCodeGo streaming; if it errors OR yields 0 tokens, fallback to DeepSeek non-streaming
+    let content = '';
+    let streamOk = false;
+    try {
+      for await (const token of chatStreamOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature })) {
+        content += token;
+        streamOk = true;
+        yield token;
+      }
+    } catch (err1: any) {
+      console.error(`[curator] OpenCodeGo streaming failed (${err1.message}), falling back to DeepSeek`);
+      streamOk = false;
+    }
+    if (!streamOk || !content.trim()) {
+      console.error(`[curator] OpenCodeGo returned empty, falling back to DeepSeek`);
+      try {
+        const text = await chat({ system, user, temperature });
+        if (text.trim()) yield text;
+      } catch (err2: any) {
+        throw new Error(`All LLM backends failed. OpenCodeGo: empty content | DeepSeek: ${err2.message}`);
+      }
+    }
+    return;
   }
-  return chatStream({ system, user, temperature });
+
+  // Default path (DeepSeek streaming)
+  let content = '';
+  let streamOk = false;
+  try {
+    for await (const token of chatStream({ system, user, temperature })) {
+      content += token;
+      streamOk = true;
+      yield token;
+    }
+  } catch (err1: any) {
+    console.error(`[curator] DeepSeek streaming failed (${err1.message}), falling back to OpenCodeGo`);
+    streamOk = false;
+  }
+  if (!streamOk || !content.trim()) {
+    console.error(`[curator] DeepSeek returned empty, falling back to OpenCodeGo`);
+    try {
+      const text = await chatOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature });
+      if (text.trim()) yield text;
+    } catch (err2: any) {
+      throw new Error(`All LLM backends failed. DeepSeek: empty content | OpenCodeGo: ${err2.message}`);
+    }
+  }
 }
 
-export async function directGenerate(domain: string, engine?: string, model?: string): Promise<string> {
+export async function directGenerate(
+  domain: string,
+  format: string = 'claude',
+  engine?: string,
+  model?: string,
+): Promise<string> {
+  const system = format === 'openclaw' ? DIRECT_SYSTEM_OPENCLAW : DIRECT_SYSTEM;
   return callLLM(
-    DIRECT_SYSTEM,
-    `Generate a comprehensive skill file for the domain: "${domain}"
+    system,
+    `Generate a comprehensive skill file for the domain: "${domain}".
 
 Draw from your training knowledge to create the most useful, accurate skill possible. Include practical examples and specific rules that someone working in this domain would find valuable.
 
@@ -156,6 +247,7 @@ export async function curate(
   domain: string,
   results: SearchResult[],
   level: 'rich' | 'sparse' | 'none',
+  format: string = 'claude',
   engine?: string,
   model?: string,
 ): Promise<string> {
@@ -163,15 +255,17 @@ export async function curate(
     .map((r) => `- ${r.title} (${r.url}): ${r.content.slice(0, 300)}`)
     .join('\n');
 
+  const systemPrompt = format === 'openclaw' ? CURATION_SYSTEM_OPENCLAW : CURATION_SYSTEM;
+
   // L1: Rich results — normal curation
   if (level === 'rich') {
-    return callLLM(CURATION_SYSTEM, buildCuratorPrompt(domain, results), engine, model, 0.7);
+    return callLLM(systemPrompt, buildCuratorPrompt(domain, results), engine, model, 0.7);
   }
 
   // L2: Sparse results — mix search + AI knowledge
   if (level === 'sparse') {
     return callLLM(
-      CURATION_SYSTEM,
+      systemPrompt,
       `## User domain
 ${domain}
 
@@ -192,6 +286,7 @@ export async function* curateStream(
   domain: string,
   results: SearchResult[],
   level: 'rich' | 'sparse' | 'none',
+  format: string = 'claude',
   engine?: string,
   model?: string,
 ): AsyncGenerator<string> {
@@ -199,8 +294,10 @@ export async function* curateStream(
     .map((r) => `- ${r.title} (${r.url}): ${r.content.slice(0, 300)}`)
     .join('\n');
 
+  const systemPrompt = format === 'openclaw' ? CURATION_SYSTEM_OPENCLAW : CURATION_SYSTEM;
+
   if (level === 'rich') {
-    for await (const token of callLLMStream(CURATION_SYSTEM, buildCuratorPrompt(domain, results), engine, model, 0.7)) {
+    for await (const token of callLLMStream(systemPrompt, buildCuratorPrompt(domain, results), engine, model, 0.7)) {
       yield token;
     }
     return;
@@ -208,7 +305,7 @@ export async function* curateStream(
 
   if (level === 'sparse') {
     for await (const token of callLLMStream(
-      CURATION_SYSTEM,
+      systemPrompt,
       `## User domain
 ${domain}
 
