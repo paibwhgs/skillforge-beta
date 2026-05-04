@@ -152,10 +152,10 @@ async function callLLM(
 ): Promise<string> {
   const first = engine === 'opencode-go'
     ? () => chatOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature })
-    : () => chat({ system, user, temperature });
+    : () => chat({ system, user, model, temperature });
 
   const second = engine === 'opencode-go'
-    ? () => chat({ system, user, temperature })
+    ? () => chat({ system, user, model, temperature })
     : () => chatOpenCodeGo({ system, user, model: model || (DEFAULT_MODEL as any).model || 'qwen3.6-plus', temperature });
 
   try {
@@ -192,7 +192,7 @@ async function* callLLMStream(
     if (!streamOk || !content.trim()) {
       console.error(`[curator] OpenCodeGo returned empty, falling back to DeepSeek`);
       try {
-        const text = await chat({ system, user, temperature });
+        const text = await chat({ system, user, model, temperature });
         if (text.trim()) yield text;
       } catch (err2: any) {
         throw new Error(`All LLM backends failed. OpenCodeGo: empty content | DeepSeek: ${err2.message}`);
@@ -205,7 +205,7 @@ async function* callLLMStream(
   let content = '';
   let streamOk = false;
   try {
-    for await (const token of chatStream({ system, user, temperature })) {
+    for await (const token of chatStream({ system, user, model, temperature })) {
       content += token;
       streamOk = true;
       yield token;

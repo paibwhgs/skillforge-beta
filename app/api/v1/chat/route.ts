@@ -75,7 +75,7 @@ ${skill.content}
       try {
         const llmStream = engine === 'opencode-go'
           ? chatStreamOpenCodeGo({ system: systemPrompt, user: message, temperature: 0.7, maxTokens: 8192, messages, model })
-          : chatStream({ system: systemPrompt, user: message, temperature: 0.7, maxTokens: 8192, messages });
+          : chatStream({ system: systemPrompt, user: message, model, temperature: 0.7, maxTokens: 8192, messages });
 
         for await (const token of llmStream) {
           fullContent += token;

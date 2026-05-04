@@ -99,8 +99,8 @@ export interface ModelOption {
 }
 
 export const MODEL_OPTIONS: ModelOption[] = [
-  { label: 'DeepSeek V4 Flash', engine: 'deepseek', model: 'deepseek-chat' },
-  { label: 'DeepSeek', engine: 'deepseek', model: 'deepseek-chat' },
+  { label: 'DeepSeek V4 Flash', engine: 'opencode-go', model: 'deepseek-v4-flash' },
+  { label: 'DeepSeek V4 官方', engine: 'deepseek', model: 'deepseek-v4-flash' },
   { label: 'Qwen3.6 Plus', engine: 'opencode-go', model: 'qwen3.6-plus' },
   { label: 'GLM-5.1', engine: 'opencode-go', model: 'glm-5.1' },
   { label: 'Kimi K2.6', engine: 'opencode-go', model: 'kimi-k2.6' },

@@ -1,0 +1,198 @@
+
+> skillforge@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.100:3000
+- Environments: .env.local
+✓ Ready in 233ms
+
+ GET /workspace?domain=superpower&format=claude&depth=quick&mode=auto&engine=opencode-go&model=deepseek-v4-flash 200 in 337ms (next.js: 170ms, application-code: 167ms)
+ GET / 200 in 74ms (next.js: 22ms, application-code: 52ms)
+ POST /api/v1/generate/stream 200 in 1956ms (next.js: 29ms, application-code: 1927ms)
+ GET /api/v1/auth/me 200 in 2.1s (next.js: 121ms, application-code: 1977ms)
+ GET /api/v1/auth/me 200 in 706ms (next.js: 3ms, application-code: 703ms)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ GET /history 200 in 62ms (next.js: 23ms, application-code: 39ms)
+ GET /api/v1/skills?limit=6 200 in 9.3s (next.js: 33ms, application-code: 9.3s)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ GET /api/v1/auth/me 500 in 10.4s (next.js: 8ms, application-code: 10.4s)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ GET /api/v1/skills?limit=50 500 in 10.4s (next.js: 3ms, application-code: 10.4s)
+ GET /login 200 in 91ms (next.js: 55ms, application-code: 36ms)
+ POST /api/v1/auth/login 200 in 1014ms (next.js: 29ms, application-code: 985ms)
+ GET / 200 in 23ms (next.js: 3ms, application-code: 20ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file://C:/Users/Longhao Zhu/Desktop/claude-migration/skillforge/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+ GET /api/v1/skills?limit=6 200 in 687ms (next.js: 1946µs, application-code: 685ms)
+ GET /api/v1/skills?limit=6 200 in 634ms (next.js: 1145µs, application-code: 633ms)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ GET /api/v1/auth/me 500 in 10.5s (next.js: 2ms, application-code: 10.5s)
+ GET /workspace?domain=superpower&format=claude&depth=quick&mode=auto&engine=opencode-go&model=qwen3.6-plus 200 in 20ms (next.js: 3ms, application-code: 17ms)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ POST /api/v1/generate/stream 500 in 10.5s (next.js: 1985µs, application-code: 10.5s)
+ GET /login 200 in 42ms (next.js: 3ms, application-code: 40ms)
+ POST /api/v1/auth/login 200 in 1278ms (next.js: 1803µs, application-code: 1277ms)
+ GET / 200 in 17ms (next.js: 3ms, application-code: 14ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file://C:/Users/Longhao Zhu/Desktop/claude-migration/skillforge/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+ GET /api/v1/skills?limit=6 200 in 748ms (next.js: 3ms, application-code: 745ms)
+ GET /api/v1/skills?limit=6 200 in 679ms (next.js: 2ms, application-code: 677ms)
+ GET /api/v1/auth/me 200 in 5.8s (next.js: 1917µs, application-code: 5.8s)
+ GET /workspace?domain=superpowers&format=openclaw&depth=quick&mode=auto&engine=deepseek&model=deepseek-chat 200 in 24ms (next.js: 3ms, application-code: 21ms)
+[stream] tokens=2422, rawContent length=10091
+[stream] content length=10091, title="Superpowers Skills Curator"
+ POST /api/v1/generate/stream 200 in 42s (next.js: 2ms, application-code: 42s)
+ GET / 200 in 48ms (next.js: 3ms, application-code: 45ms)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ GET /api/v1/skills?limit=6 500 in 10.5s (next.js: 2ms, application-code: 10.5s)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ GET /api/v1/auth/me 500 in 10.5s (next.js: 8ms, application-code: 10.5s)
+ GET /login 200 in 40ms (next.js: 2ms, application-code: 38ms)
+ POST /api/v1/auth/login 200 in 975ms (next.js: 2ms, application-code: 973ms)
+ GET / 200 in 19ms (next.js: 3ms, application-code: 16ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file://C:/Users/Longhao Zhu/Desktop/claude-migration/skillforge/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+ GET /api/v1/skills?limit=6 200 in 699ms (next.js: 2ms, application-code: 697ms)
+ GET /api/v1/skills?limit=6 200 in 687ms (next.js: 1836µs, application-code: 685ms)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ GET /api/v1/auth/me 500 in 10.5s (next.js: 1992µs, application-code: 10.5s)
+ GET /login 200 in 32ms (next.js: 2ms, application-code: 30ms)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ GET /api/v1/auth/me 500 in 10.5s (next.js: 1865µs, application-code: 10.5s)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ POST /api/v1/auth/login 500 in 10.5s (next.js: 1820µs, application-code: 10.5s)
+ POST /api/v1/auth/login 200 in 1071ms (next.js: 1902µs, application-code: 1069ms)
+ GET / 200 in 20ms (next.js: 1652µs, application-code: 18ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file://C:/Users/Longhao Zhu/Desktop/claude-migration/skillforge/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+ GET /api/v1/skills?limit=6 200 in 616ms (next.js: 1884µs, application-code: 614ms)
+ GET /api/v1/skills?limit=6 200 in 571ms (next.js: 1878µs, application-code: 569ms)
+ GET / 200 in 42ms (next.js: 3ms, application-code: 39ms)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ GET /api/v1/skills?limit=6 500 in 10.5s (next.js: 2ms, application-code: 10.5s)
+⨯ [TypeError: fetch failed] {
+  [cause]: Error [ConnectTimeoutError]: Connect Timeout Error (attempted address: copycraft-paibwhgs.aws-ap-northeast-1.turso.io:443, timeout: 10000ms)
+      at ignore-listed frames {
+    code: 'UND_ERR_CONNECT_TIMEOUT'
+  }
+}
+ GET /api/v1/auth/me 500 in 10.5s (next.js: 7ms, application-code: 10.5s)
+ GET / 200 in 36ms (next.js: 3ms, application-code: 33ms)
+ GET /api/v1/auth/me 200 in 843ms (next.js: 6ms, application-code: 837ms)
+ GET /api/v1/skills?limit=6 200 in 851ms (next.js: 2ms, application-code: 849ms)
+ GET / 200 in 25ms (next.js: 3ms, application-code: 22ms)
+ GET /api/v1/auth/me 200 in 917ms (next.js: 5ms, application-code: 912ms)
+ GET /api/v1/skills?limit=6 200 in 1149ms (next.js: 1604µs, application-code: 1147ms)
+ GET /workspace?domain=oh-my-opencode&format=openclaw&depth=quick&mode=auto&engine=deepseek&model=deepseek-chat 200 in 12ms (next.js: 1527µs, application-code: 11ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file://C:/Users/Longhao Zhu/Desktop/claude-migration/skillforge/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[stream] tokens=3152, rawContent length=13194
+[stream] content length=13194, title="Oh My OpenCode Skill"
+ POST /api/v1/generate/stream 200 in 49s (next.js: 1404µs, application-code: 49s)
+ GET /history 200 in 30ms (next.js: 2ms, application-code: 27ms)
+ GET /api/v1/auth/me 200 in 772ms (next.js: 8ms, application-code: 764ms)
+ GET /api/v1/skills?limit=50 200 in 1016ms (next.js: 1891µs, application-code: 1014ms)
+ DELETE /api/v1/skills/0189776c-9a28-4f7e-9939-0e55400b9ded 200 in 1784ms (next.js: 541ms, application-code: 1243ms)
+ GET /history 200 in 75ms (next.js: 10ms, application-code: 65ms)
+ GET /api/v1/auth/me 200 in 1054ms (next.js: 11ms, application-code: 1043ms)
+ GET /api/v1/skills?limit=50 200 in 1310ms (next.js: 3ms, application-code: 1307ms)
+ GET / 200 in 26ms (next.js: 3ms, application-code: 23ms)
+ GET /api/v1/auth/me 200 in 1303ms (next.js: 4ms, application-code: 1298ms)
+ GET /api/v1/skills?limit=6 200 in 1676ms (next.js: 1425µs, application-code: 1675ms)
+ GET /workspace?domain=%E8%87%AA%E6%88%91%E6%94%B9%E8%BF%9B-self+improvement&format=openclaw&depth=quick&mode=auto&engine=deepseek&model=deepseek-chat 200 in 13ms (next.js: 2ms, application-code: 11ms)
+[browser] Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior="smooth"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior (file://C:/Users/Longhao Zhu/Desktop/claude-migration/skillforge/.next/dev/static/chunks/node_modules_next_dist_115brz8._.js:2431:13)
+[stream] tokens=3284, rawContent length=14773
+[stream] content length=14773, title="Self-Improvement Feedback Loop Skill"
+ POST /api/v1/generate/stream 200 in 62s (next.js: 1486µs, application-code: 62s)
+ GET /api/v1/skills?limit=6 200 in 968ms (next.js: 2ms, application-code: 966ms)
+ GET /api/v1/skills?limit=6 200 in 631ms (next.js: 3ms, application-code: 628ms)
+ GET /workspace?domain=%E5%BA%8F%E5%88%97%E5%8C%96%E6%80%9D%E8%80%83&format=openclaw&depth=quick&mode=auto&engine=deepseek&model=deepseek-chat 200 in 13ms (next.js: 2ms, application-code: 11ms)
+[stream] tokens=2363, rawContent length=9514
+[stream] content length=9514, title="Sequential Thinking Skill"
+ POST /api/v1/generate/stream 200 in 44s (next.js: 1403µs, application-code: 44s)
+ GET / 200 in 29ms (next.js: 3ms, application-code: 26ms)
+ GET /api/v1/auth/me 200 in 1658ms (next.js: 7ms, application-code: 1651ms)
+ GET /api/v1/skills?limit=6 200 in 1677ms (next.js: 1876µs, application-code: 1676ms)
+ GET / 200 in 20ms (next.js: 2ms, application-code: 18ms)
+ GET /api/v1/skills?limit=6 200 in 672ms (next.js: 3ms, application-code: 669ms)
+ GET /api/v1/auth/me 200 in 713ms (next.js: 6ms, application-code: 707ms)
+ GET / 200 in 219ms (next.js: 103ms, application-code: 116ms)
+ GET / 200 in 45ms (next.js: 3ms, application-code: 42ms)
+ GET / 200 in 117ms (next.js: 55ms, application-code: 62ms)
+ GET / 200 in 27ms (next.js: 3ms, application-code: 25ms)
+ GET / 200 in 110ms (next.js: 56ms, application-code: 54ms)
+ GET / 200 in 24ms (next.js: 3ms, application-code: 21ms)
+ GET / 200 in 136ms (next.js: 56ms, application-code: 81ms)
+ GET / 200 in 47ms (next.js: 3ms, application-code: 44ms)
+ GET / 200 in 21ms (next.js: 2ms, application-code: 19ms)
+✓ Compiled in 124ms
+ GET / 200 in 295ms (next.js: 90ms, application-code: 205ms)
+ GET / 200 in 155ms (next.js: 63ms, application-code: 93ms)
+ GET / 200 in 63ms (next.js: 42ms, application-code: 21ms)
+ GET / 200 in 65ms (next.js: 4ms, application-code: 61ms)
+ GET / 200 in 65ms (next.js: 22ms, application-code: 43ms)
+ GET / 200 in 71ms (next.js: 41ms, application-code: 31ms)

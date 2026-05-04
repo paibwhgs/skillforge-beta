@@ -1,6 +1,7 @@
 interface ChatOpts {
   system: string;
   user: string;
+  model?: string;
   temperature?: number;
   maxTokens?: number;
 }
@@ -18,7 +19,7 @@ export async function chat(opts: ChatOpts): Promise<string> {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'deepseek-chat',
+      model: opts.model || 'deepseek-v4-flash',
       messages: [
         { role: 'system', content: opts.system },
         { role: 'user', content: opts.user },
