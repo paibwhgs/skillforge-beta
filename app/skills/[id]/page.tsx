@@ -22,6 +22,8 @@ export default function SkillDetailPage() {
   const [activeFile, setActiveFile] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [communityPostId, setCommunityPostId] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
 
   const fetchSkill = () => {
     setLoading(true);
@@ -39,6 +41,10 @@ export default function SkillDetailPage() {
         const skillFiles = (data.files || []) as SkillFile[];
         setFiles(skillFiles);
         if (skillFiles.length > 0) setActiveFile(skillFiles[0].path);
+        // Check if skill is already published to community
+        if (data.communityPostId) {
+          setCommunityPostId(data.communityPostId);
+        }
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -120,6 +126,47 @@ export default function SkillDetailPage() {
                 </div>
                 <h1 className="font-display text-2xl md:text-3xl text-white">{skill.title}</h1>
                 <p className="text-zinc-400 text-sm mt-0.5">{skill.domain}</p>
+                {user && (
+                  <div className="mt-3">
+                    {communityPostId ? (
+                      <button
+                        onClick={() => router.push(`/community/${communityPostId}`)}
+                        className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 transition"
+                      >
+                        <span className="material-symbols-outlined text-sm">check_circle</span>
+                        已发布到社区
+                      </button>
+                    ) : (
+                      <button
+                        onClick={async () => {
+                          setPublishing(true);
+                          try {
+                            const res = await fetch('/api/v1/community', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                title: skill.title,
+                                content: skill.content.slice(0, 500),
+                                skillId: skill.id,
+                              }),
+                            });
+                            if (res.ok) {
+                              const data = await res.json();
+                              setCommunityPostId(data.post.id);
+                            }
+                          } finally {
+                            setPublishing(false);
+                          }
+                        }}
+                        disabled={publishing}
+                        className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-[#FF5C00] transition disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-sm">public</span>
+                        {publishing ? '发布中...' : '发布到社区'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="h-px bg-zinc-900" />

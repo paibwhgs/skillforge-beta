@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initDB, getSkill, getSkillSources, deleteSkill, updateSkillBookmark } from '@/lib/db';
+import { initDB, getSkill, getSkillSources, deleteSkill, updateSkillBookmark, getCommunityPostBySkillId } from '@/lib/db';
 import type { SkillFile } from '@/types';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -11,7 +11,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
   const sources = await getSkillSources(id);
   const files: SkillFile[] = [];
-  return NextResponse.json({ skill, sources, files });
+  const communityPost = await getCommunityPostBySkillId(id);
+  const communityPostId = communityPost?.id || null;
+  return NextResponse.json({ skill, sources, files, communityPostId });
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

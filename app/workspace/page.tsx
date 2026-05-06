@@ -98,7 +98,6 @@ function WorkspaceContent() {
                   case 'token':
                     accumulatedContent += data.text;
                     setContent(accumulatedContent);
-                    console.log('[workspace] token', { len: data.text?.length, total: accumulatedContent.length });
                     break;
 
                   case 'source':
@@ -114,7 +113,6 @@ function WorkspaceContent() {
                     break;
 
                   case 'done':
-                    console.log('[workspace] done event', { contentLen: data.skill.content?.length, title: data.skill.title });
                     setProgress(100);
                     setStreaming(false);
                     setContent(data.skill.content);

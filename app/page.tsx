@@ -38,19 +38,19 @@ export default function Home() {
     <div className="min-h-screen bg-black">
       {/* Hero Section */}
       <section className="w-full px-6 pt-16 pb-8 flex flex-col items-center text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#FF5C00]/30 bg-[#FF5C00]/5 text-[#FF5C00] text-[10px] font-bold uppercase tracking-widest mb-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#FF5C00]/30 bg-[#FF5C00]/5 text-[#FF5C00] text-[10px] font-bold uppercase tracking-widest mb-6 animate-fadeInUp">
           <span className="material-symbols-outlined text-sm">bolt</span>
           AI 驱动的技能合成
         </div>
-        <h1 className="font-display text-4xl sm:text-5xl mb-4 text-white max-w-3xl leading-tight">
+        <h1 className="font-display text-4xl sm:text-5xl mb-4 text-white max-w-3xl leading-tight animate-fadeInUp stagger-1">
           加速你的 <span className="text-[#FF5C00]">技术栈</span>
         </h1>
-        <p className="text-zinc-400 max-w-2xl text-base mb-10 leading-relaxed">
+        <p className="text-zinc-400 max-w-2xl text-base mb-10 leading-relaxed animate-fadeInUp stagger-2">
           在数秒内生成针对任何领域的高密度学习路径、架构文档和实现指南。
         </p>
 
         {/* Search Input */}
-        <div className="w-full max-w-3xl">
+        <div className="w-full max-w-3xl animate-fadeInUp stagger-3">
           <SearchInput
             domain={domain}
             onDomainChange={setDomain}
@@ -90,13 +90,13 @@ export default function Home() {
               <a
                 key={s.id}
                 href={`/skills/${s.id}`}
-                className="md:col-span-2 lg:col-span-3 row-span-2 group relative overflow-hidden rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-zinc-700 transition-all block"
+                className="md:col-span-2 lg:col-span-3 row-span-2 group relative overflow-hidden rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-zinc-700 hover:-translate-y-0.5 transition-all block animate-fadeInUp"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-zinc-900/50 to-zinc-950 opacity-50" />
                 <div className="relative p-8 h-full flex flex-col justify-end">
                   <div className="mb-4">
                     <span className="px-2 py-1 bg-[#FF5C00] text-white text-[10px] font-black uppercase tracking-tighter rounded">
-                      热门生成
+                      最新
                     </span>
                   </div>
                   <h3 className="font-display text-2xl text-white mb-2">{s.title}</h3>
@@ -112,11 +112,11 @@ export default function Home() {
             ))}
 
             {/* Medium Cards */}
-            {recentSkills.slice(1, 3).map((s) => (
+            {recentSkills.slice(1, 3).map((s, i) => (
               <a
                 key={s.id}
                 href={`/skills/${s.id}`}
-                className="md:col-span-2 lg:col-span-3 group p-6 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-zinc-700 transition-all flex flex-col justify-between block"
+                className={`md:col-span-2 lg:col-span-3 group p-6 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-zinc-700 hover:-translate-y-0.5 transition-all flex flex-col justify-between block animate-fadeInUp stagger-${i + 1}`}
               >
                 <div>
                   <div className="flex justify-between items-start mb-4">
@@ -132,11 +132,11 @@ export default function Home() {
             ))}
 
             {/* Small Tag Cards */}
-            {recentSkills.slice(3, 6).map((s) => (
+            {recentSkills.slice(3, 6).map((s, i) => (
               <a
                 key={s.id}
                 href={`/skills/${s.id}`}
-                className="lg:col-span-2 p-4 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-[#FF5C00]/30 transition-all block"
+                className={`lg:col-span-2 p-4 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-[#FF5C00]/30 hover:-translate-y-0.5 transition-all block animate-fadeInUp stagger-${i + 3}`}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-8 h-8 rounded bg-zinc-900 flex items-center justify-center">
@@ -163,16 +163,16 @@ export default function Home() {
           </div>
           <div className="flex flex-col gap-4">
             <span className="material-symbols-outlined text-[#508eff] text-4xl">travel_explore</span>
-            <h3 className="font-display text-2xl text-white">Tavily 合成</h3>
+            <h3 className="font-display text-2xl text-white">联网搜索</h3>
             <p className="text-zinc-500 text-sm leading-relaxed">
               实时网页抓取并合成最新的 API 文档和技术发布信息。
             </p>
           </div>
           <div className="flex flex-col gap-4">
             <span className="material-symbols-outlined text-[#FF5C00] text-4xl">code</span>
-            <h3 className="font-display text-2xl text-white">Claude Code 就绪</h3>
+            <h3 className="font-display text-2xl text-white">多格式输出</h3>
             <p className="text-zinc-500 text-sm leading-relaxed">
-              输出完美格式化的 .md 文件，针对 Claude 的上下文窗口和工具链进行了优化。
+              支持 Markdown、Claude Code 和 OpenCLAW 三种格式，满足不同使用场景。
             </p>
           </div>
         </div>

@@ -8,9 +8,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Commands
 
-- `npm run dev` / `build` / `start` / `lint` — standard Next.js 16
+- `npm run dev` / `build` / `start` — standard Next.js 16
 - `npm run serve` — runs standalone build via `node .next/standalone/server.js` (used by Docker)
-- **No test or typecheck scripts.** Don't try to run what doesn't exist.
+- `npm run lint` — ESLint v9 flat config
+- `npm run typecheck` — `tsc --noEmit --project tsconfig.typecheck.json`
+- **No test scripts.** Don't try to run what doesn't exist.
 
 ## Gotchas
 
@@ -22,6 +24,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **DB auto-initializes** on first API call (`initDB()` in route handlers). Creates tables with `IF NOT EXISTS`, runs `ALTER TABLE` migrations for new columns. No manual migration step.
 - **Auth is custom JWT** (not next-auth): PBKDF2 hashing, HTTP-only `token` cookie, 7-day expiry. `JWT_SECRET` falls back to a dev value in development but throws in production.
 - **Path alias `@/*`** maps to project root (configured in `tsconfig.json`).
+- **`proxy.ts` is dead code** — exports a 3-tier auth middleware function but is named `proxy.ts`, not `middleware.ts`, so Next.js never invokes it. No file imports it. Auth enforcement is handled inline via `getUserId()` in each route handler instead.
+- **`lib/packager.ts` referenced in CLAUDE.md does not exist** — the file was removed or never created. The `openclaw` format path is effectively a no-op.
+- **No `loading.tsx` anywhere** — no Suspense boundaries at the route level. Pages handle loading via client-side state (`useEffect` + loading flag).
+- **No test infrastructure** — no test framework, no test files, no test configs. Start from scratch if adding tests.
+- **No CI/CD pipeline** — no `.github/workflows/`, all deploys are manual `docker compose up -d --build`.
+- **`dev-server.log` and `skillforge.tar.gz`** are build artifacts not in `.gitignore` — clean them up.
 
 ## Architecture
 
@@ -32,9 +40,10 @@ domain → multiSearch() (Tavily + DashScope parallel) → curate() (DeepSeek 3-
        → formatSkill() → insertSkill() + insertSources() → Turso
 ```
 
-- **lib/**: `auth.ts` (JWT + password hashing), `db.ts` (libSQL/Turso CRUD + initDB), `search.ts` (Tavily + DashScope), `curator.ts` (DeepSeek curation), `llm.ts`, `formatter.ts`
+- **lib/** ([AGENTS.md](lib/AGENTS.md)): `auth.ts`, `db.ts`, `search.ts`, `curator.ts`, `llm.ts`, `llm-stream.ts`, `formatter.ts`
 - **app/api/v1/**: `auth/` (register/login/logout/me), `generate/`, `skills/`, `chat/` (SSE streaming), `feedback/`
-- **app/**: `page.tsx` (home), `login/`, `register/`, `history/`, `skills/[id]/` — all client components
+- **app/** ([AGENTS.md](app/AGENTS.md)): `page.tsx` (home), `login/`, `register/`, `history/`, `skills/[id]/` — all client components
+- **components/** ([AGENTS.md](components/AGENTS.md)): 10 UI components, all `'use client'`
 - **seeds/skills.ts**: fallback seed data when search returns nothing
 
 ## Deployment

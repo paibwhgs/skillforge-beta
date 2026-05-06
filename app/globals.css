@@ -17,10 +17,10 @@
   --color-surface-highest: #343535;
   --color-surface-bright: #383939;
 
-  --font-display: "Space Grotesk", "Noto Sans SC", sans-serif;
-  --font-body: "Inter", "Noto Sans SC", sans-serif;
+  --font-display: "Syne", "Noto Sans SC", sans-serif;
+  --font-body: "DM Sans", "Noto Sans SC", sans-serif;
   --font-mono: "JetBrains Mono", "Noto Sans SC", monospace;
-  --font-label: "Inter", "Noto Sans SC", sans-serif;
+  --font-label: "DM Sans", "Noto Sans SC", sans-serif;
 }
 
 ::selection {
@@ -37,9 +37,44 @@ html {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.4s ease-out;
 }
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out both;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.4s ease-out both;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Staggered animation delays */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
 
 .forge-gradient-border {
   position: relative;

@@ -37,6 +37,16 @@ export function Header() {
             控制台
           </a>
           <a
+            href="/community"
+            className={`h-full flex items-center transition-colors ${
+              isActive('/community')
+                ? 'text-white border-b-2 border-[#FF5C00] font-medium'
+                : 'text-zinc-500 hover:text-zinc-200'
+            }`}
+          >
+            社区
+          </a>
+          <a
             href="/docs"
             className={`h-full flex items-center transition-colors ${
               isActive('/docs')

@@ -29,6 +29,7 @@
 - **DeepSeek**: https://platform.deepseek.com 创建 API Key
 - **Tavily**: https://app.tavily.com 注册获取 API Key（免费每月 1000 次）
 - **Dashscope（百炼）**: https://bailian.console.aliyun.com 获取 API Key（国内访问推荐）
+- **OpenCodeGo**: 基于 DeepSeek 的 API 代理（可选，用于直接生成模式）
 
 ### 2. 配置环境变量
 
@@ -43,8 +44,10 @@ DEEPSEEK_API_KEY=sk-your-deepseek-key
 TAVILY_API_KEY=tvly-your-tavily-key
 DASHSCOPE_API_KEY=sk-your-dashscope-key
 JWT_SECRET=your-jwt-secret              # 用于用户登录的 JWT 签名
+OPENCODE_GO_API_KEY=sk-your-opencode-go-key   # 可选，OpenCodeGo API Key
 ```
 
+> `.env.local` 不会被 Git 跟踪，放置真实密钥；`.env.example` 作为模板提交到仓库。
 > `JWT_SECRET` 在生产环境必填。本地 dev 模式会自动使用开发密钥。
 
 ### 3. 启动
@@ -202,6 +205,7 @@ DEEPSEEK_API_KEY=sk-your-deepseek-key
 TAVILY_API_KEY=tvly-your-tavily-key          # 可选，仅 Tavily
 DASHSCOPE_API_KEY=sk-your-dashscope-key       # 可选，仅百炼搜索
 JWT_SECRET=your-jwt-secret                    # 必填，用户登录 JWT 签名密钥
+OPENCODE_GO_API_KEY=sk-your-opencode-go-key   # 可选，OpenCodeGo API Key
 ```
 
 > Dashscope（百炼）是国内阿里云提供的搜索 API，从 ECS 访问延迟极低，和 Tavily 互补使用。
@@ -219,8 +223,9 @@ JWT_SECRET=your-jwt-secret                    # 必填，用户登录 JWT 签名
 npm run dev     # 开发服务器
 npm run build   # 生产构建（standalone 输出）
 npm run start   # 启动生产服务器（next start）
-npm run serve   # 启动 standalone 构建（node .next/standalone/server.js）
-npm run lint    # ESLint 检查
+npm run start:standalone   # 启动 standalone 构建（node .next/standalone/server.js）
+npm run typecheck          # TypeScript 类型检查
+npm run lint               # ESLint 检查
 ```
 
 ## 项目结构

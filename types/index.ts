@@ -60,12 +60,6 @@ export interface SkillSource {
   created_at: string;
 }
 
-export interface StepStatus {
-  step: 'searching' | 'curating' | 'formatting';
-  label: string;
-  done: boolean;
-}
-
 export interface UserRecord {
   id: string;
   email: string;
@@ -83,6 +77,27 @@ export interface ChatRequest {
   history: { role: 'user' | 'assistant'; content: string }[];
   engine?: string;
   model?: string;
+}
+
+export interface CommunityPost {
+  id: string;
+  user_id: string;
+  username: string;
+  title: string;
+  content: string;
+  skill_id: string;
+  comment_count: number;
+  created_at: string;
+}
+
+export interface CommunityComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  username: string;
+  parent_id: string;
+  content: string;
+  created_at: string;
 }
 
 export interface ModelOption {

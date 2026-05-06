@@ -6,8 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "serve": "node .next/standalone/server.js",
-    "lint": "eslint"
+    "start:standalone": "node .next/standalone/server.js",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit --project tsconfig.typecheck.json"
   },
   "dependencies": {
     "@libsql/client": "^0.17.3",

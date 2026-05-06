@@ -1,10 +1,12 @@
 .git
 .gitignore
 node_modules
+stitch-designs/
+examples/
+.claude/
 .next
 .env*
 .vercel
-.next
 docker-compose.yml
 Dockerfile
 README.md

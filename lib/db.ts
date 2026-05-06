@@ -1,6 +1,6 @@
 import { createClient, type Row, type Client } from '@libsql/client';
 import { v4 as uuid } from 'uuid';
-import type { SkillRecord, SkillSource, SkillFile, UserRecord } from '@/types';
+import type { SkillRecord, SkillSource, SkillFile, UserRecord, CommunityPost, CommunityComment } from '@/types';
 
 let db: Client | null = null;
 let initialized = false;
@@ -108,6 +108,31 @@ export async function initDB() {
   `);
   await c.execute('CREATE INDEX IF NOT EXISTS idx_skill_files ON skill_files(skill_id)');
   await c.execute('CREATE INDEX IF NOT EXISTS idx_skills_user ON skills(user_id)');
+
+  // Community tables
+  await c.execute(`
+    CREATE TABLE IF NOT EXISTS community_posts (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      skill_id TEXT DEFAULT '',
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  await c.execute('CREATE INDEX IF NOT EXISTS idx_community_posts_user ON community_posts(user_id)');
+  await c.execute(`
+    CREATE TABLE IF NOT EXISTS community_comments (
+      id TEXT PRIMARY KEY,
+      post_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      parent_id TEXT DEFAULT '',
+      content TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  await c.execute('CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id)');
+
   // Migrate existing tables — add columns that may not exist yet
   for (const stmt of [
     "ALTER TABLE skills ADD COLUMN user_id TEXT DEFAULT ''",
@@ -173,6 +198,21 @@ export async function updateSkillBookmark(
   const result = await c.execute({
     sql: 'UPDATE skills SET bookmarked = ? WHERE id = ?',
     args: [bookmarked, id],
+  });
+  return result.rowsAffected > 0;
+}
+
+export async function updateSkillFeedback(
+  id: string,
+  rating: number,
+  feedback?: string,
+): Promise<boolean> {
+  const c = getDb();
+  const result = await c.execute({
+    sql: feedback !== undefined
+      ? 'UPDATE skills SET rating = ?, feedback = ? WHERE id = ?'
+      : 'UPDATE skills SET rating = ? WHERE id = ?',
+    args: feedback !== undefined ? [rating, feedback, id] : [rating, id],
   });
   return result.rowsAffected > 0;
 }
@@ -297,4 +337,137 @@ export async function listUsers(): Promise<UserRecord[]> {
   const c = getDb();
   const rows = await c.execute('SELECT * FROM users ORDER BY created_at DESC');
   return rows.rows.map(rowToUser);
+}
+
+// ── Community Posts ────────────────────────────────────────────
+
+function rowToCommunityPost(r: Row, username: string, commentCount: number): CommunityPost {
+  return {
+    id: String(r.id),
+    user_id: String(r.user_id),
+    username,
+    title: String(r.title),
+    content: String(r.content),
+    skill_id: String(r.skill_id || ''),
+    comment_count: commentCount,
+    created_at: String(r.created_at),
+  };
+}
+
+function rowToCommunityComment(r: Row, username: string): CommunityComment {
+  return {
+    id: String(r.id),
+    post_id: String(r.post_id),
+    user_id: String(r.user_id),
+    username,
+    parent_id: String(r.parent_id || ''),
+    content: String(r.content),
+    created_at: String(r.created_at),
+  };
+}
+
+export async function createCommunityPost(
+  userId: string,
+  title: string,
+  content: string,
+  skillId?: string,
+): Promise<string> {
+  const c = getDb();
+  const id = uuid();
+  await c.execute({
+    sql: 'INSERT INTO community_posts (id, user_id, title, content, skill_id) VALUES (?, ?, ?, ?, ?)',
+    args: [id, userId, title, content, skillId || ''],
+  });
+  return id;
+}
+
+export async function getCommunityPosts(limit = 20, offset = 0): Promise<CommunityPost[]> {
+  const c = getDb();
+  const rows = await c.execute({
+    sql: `SELECT p.*, u.username,
+      (SELECT COUNT(*) FROM community_comments WHERE post_id = p.id) AS comment_count
+      FROM community_posts p
+      JOIN users u ON u.id = p.user_id
+      ORDER BY p.created_at DESC LIMIT ? OFFSET ?`,
+    args: [limit, offset],
+  });
+  return rows.rows.map((r) => rowToCommunityPost(r, String(r.username), Number(r.comment_count || 0)));
+}
+
+export async function getCommunityPost(id: string): Promise<CommunityPost | null> {
+  const c = getDb();
+  const rows = await c.execute({
+    sql: `SELECT p.*, u.username,
+      (SELECT COUNT(*) FROM community_comments WHERE post_id = p.id) AS comment_count
+      FROM community_posts p
+      JOIN users u ON u.id = p.user_id
+      WHERE p.id = ?`,
+    args: [id],
+  });
+  if (!rows.rows[0]) return null;
+  const r = rows.rows[0];
+  return rowToCommunityPost(r, String(r.username), Number(r.comment_count || 0));
+}
+
+export async function deleteCommunityPost(id: string, userId: string): Promise<boolean> {
+  const c = getDb();
+  await c.execute({ sql: 'DELETE FROM community_comments WHERE post_id = ?', args: [id] });
+  const result = await c.execute({
+    sql: 'DELETE FROM community_posts WHERE id = ? AND user_id = ?',
+    args: [id, userId],
+  });
+  return result.rowsAffected > 0;
+}
+
+export async function createCommunityComment(
+  postId: string,
+  userId: string,
+  content: string,
+  parentId?: string,
+): Promise<string> {
+  const c = getDb();
+  const id = uuid();
+  await c.execute({
+    sql: 'INSERT INTO community_comments (id, post_id, user_id, content, parent_id) VALUES (?, ?, ?, ?, ?)',
+    args: [id, postId, userId, content, parentId || ''],
+  });
+  return id;
+}
+
+export async function getCommunityComments(postId: string): Promise<CommunityComment[]> {
+  const c = getDb();
+  const rows = await c.execute({
+    sql: `SELECT c.*, u.username
+      FROM community_comments c
+      JOIN users u ON u.id = c.user_id
+      WHERE c.post_id = ?
+      ORDER BY c.created_at ASC`,
+    args: [postId],
+  });
+  return rows.rows.map((r) => rowToCommunityComment(r, String(r.username)));
+}
+
+export async function deleteCommunityComment(id: string, userId: string): Promise<boolean> {
+  const c = getDb();
+  const result = await c.execute({
+    sql: 'DELETE FROM community_comments WHERE id = ? AND user_id = ?',
+    args: [id, userId],
+  });
+  return result.rowsAffected > 0;
+}
+
+export async function getCommunityPostBySkillId(skillId: string): Promise<CommunityPost | null> {
+  const c = getDb();
+  const rows = await c.execute({
+    sql: `SELECT p.*, u.username,
+      (SELECT COUNT(*) FROM community_comments WHERE post_id = p.id) AS comment_count
+      FROM community_posts p
+      JOIN users u ON u.id = p.user_id
+      WHERE p.skill_id = ?
+      LIMIT 1`,
+    args: [skillId],
+  });
+  if (!rows.rows[0]) return null;
+  const r = rows.rows[0];
+  return rowToCommunityPost(r, String(r.username), Number(r.comment_count || 0));
 }

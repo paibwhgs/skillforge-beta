@@ -63,7 +63,7 @@ export function SkillCard({ skill, variant = 'default' }: Props) {
     return (
       <div
         onClick={navigate}
-        className="group bg-[#080808] border border-zinc-900 rounded-lg p-6 hover:border-[#FF5C00]/30 transition-all cursor-pointer"
+        className="group bg-[#080808] border border-zinc-900 rounded-lg p-6 hover:border-[#FF5C00]/30 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
       >
         <div className="flex justify-between items-start mb-4">
           <div className="w-10 h-10 bg-zinc-900 rounded border border-zinc-800 flex items-center justify-center">
@@ -109,7 +109,7 @@ export function SkillCard({ skill, variant = 'default' }: Props) {
   return (
     <div
       onClick={navigate}
-      className="group relative bg-[#080808] border border-zinc-900 rounded-lg overflow-hidden flex flex-col hover:border-zinc-700 transition-all cursor-pointer"
+      className="group relative bg-[#080808] border border-zinc-900 rounded-lg overflow-hidden flex flex-col hover:border-zinc-700 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
     >
       {/* Colored gradient header */}
       <div className="h-36 bg-zinc-900/50 relative overflow-hidden">

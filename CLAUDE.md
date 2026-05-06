@@ -7,9 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` — Start dev server (Next.js 16.2)
 - `npm run build` — Production build (`output: 'standalone'`)
 - `npm run start` — `next start`
-- `npm run serve` — Run standalone build from `.next/standalone/server.js` (matches Docker)
+- `npm run start:standalone` — Run standalone build from `.next/standalone/server.js` (matches Docker)
 - `npm run lint` — ESLint (flat config, v9)
-- **No test or typecheck scripts configured.**
+- `npm run typecheck` — TypeScript type check via `tsc --noEmit`
 
 ## Architecture
 
@@ -47,8 +47,13 @@ Drives the [workspace UI](app/workspace/page.tsx).
 | [app/api/v1/generate/stream/route.ts](app/api/v1/generate/stream/route.ts) | SSE-streamed generation endpoint |
 | [app/api/v1/chat/route.ts](app/api/v1/chat/route.ts) | SSE-streamed AI chat for editing skills |
 | [app/api/v1/skills/route.ts](app/api/v1/skills/route.ts) | List skills (scoped to current user if logged in) |
-| [app/api/v1/skills/\[id\]/route.ts](app/api/v1/skills/%5Bid%5D/route.ts) | Get single skill with sources + files |
+| [app/api/v1/skills/\[id\]/route.ts](app/api/v1/skills/%5Bid%5D/route.ts) | Get/delete skill, PATCH bookmark toggle |
 | [app/api/v1/feedback/route.ts](app/api/v1/feedback/route.ts) | Submit rating/feedback |
+| [app/api/v1/community/route.ts](app/api/v1/community/route.ts) | List/create community posts |
+| [app/api/v1/community/\[id\]/route.ts](app/api/v1/community/%5Bid%5D/route.ts) | Get/delete community post |
+| [app/api/v1/community/\[id\]/comments/route.ts](app/api/v1/community/%5Bid%5D/comments/route.ts) | Create comment on post |
+| [app/api/v1/community/\[id\]/comments/\[commentId\]/route.ts](app/api/v1/community/%5Bid%5D/comments/%5BcommentId%5D/route.ts) | Delete comment |
+| [proxy.ts](proxy.ts) | Auth proxy — enforces require/optional/public auth tiers on API routes |
 | [lib/llm.ts](lib/llm.ts) | DeepSeek + OpenCodeGo API client (non-streaming) |
 | [lib/llm-stream.ts](lib/llm-stream.ts) | DeepSeek + OpenCodeGo streaming async generators |
 | [lib/search.ts](lib/search.ts) | Dual search (Tavily + Dashscope) with query generation & dedup |
@@ -68,20 +73,21 @@ Drives the [workspace UI](app/workspace/page.tsx).
 | [app/workspace/page.tsx](app/workspace/page.tsx) | Streaming workspace — real-time logs, live token output, source list |
 | [app/history/page.tsx](app/history/page.tsx) | Browse past generations (per-user if logged in) |
 | [app/skills/\[id\]/page.tsx](app/skills/%5Bid%5D/page.tsx) | Single skill detail view with sources + files |
+| [app/community/page.tsx](app/community/page.tsx) | Community post listing |
+| [app/community/\[id\]/page.tsx](app/community/%5Bid%5D/page.tsx) | Community post detail with comments |
+| [app/profile/page.tsx](app/profile/page.tsx) | User profile page (with their skills)
 | [app/login/](app/login/) | Login page |
 | [app/register/](app/register/) | Register page |
+| [app/docs/page.tsx](app/docs/page.tsx) | Docs page explaining what skills are |
 
 ### Frontend components
 
 | Path | Purpose |
 |---|---|
 | [components/SearchInput.tsx](components/SearchInput.tsx) | Domain input, format/depth/mode selectors, search toggle |
-| [components/GenerationProgress.tsx](components/GenerationProgress.tsx) | Animated step indicator during generation |
 | [components/SkillPreview.tsx](components/SkillPreview.tsx) | Rendered skill with copy/download |
-| [components/SkillCard.tsx](components/SkillCard.tsx) | Skill list item card (history page) |
+| [components/SkillCard.tsx](components/SkillCard.tsx) | Skill list item card with bookmark + inline feedback (history page) |
 | [components/ChatPanel.tsx](components/ChatPanel.tsx) | Floating AI chat panel for editing skills (SSE) |
-| [components/FeedbackBar.tsx](components/FeedbackBar.tsx) | Thumbs up/down + optional text feedback |
-| [components/StarRating.tsx](components/StarRating.tsx) | Star rating widget |
 | [components/WorkspaceLog.tsx](components/WorkspaceLog.tsx) | Streaming log display for workspace page |
 | [components/BottomNav.tsx](components/BottomNav.tsx) | Mobile bottom navigation bar |
 | [components/AuthProvider.tsx](components/AuthProvider.tsx) | React context for auth state |
@@ -90,9 +96,11 @@ Drives the [workspace UI](app/workspace/page.tsx).
 ### Data model
 
 - `users` — id (uuid), email (unique), username, password_hash, password_salt, created_at
-- `skills` — id (uuid), title, domain, format, content, rating, feedback, depth, mode, user_id, created_at
+- `skills` — id (uuid), title, domain, format, content, rating, feedback, depth, mode, bookmarked, user_id, created_at
 - `skill_sources` — id (uuid), skill_id (FK), url, title, relevance, created_at
 - `skill_files` — id (uuid), skill_id (FK), path, content
+- `community_posts` — id (uuid), user_id, skill_id (optional), title, content, created_at
+- `community_comments` — id (uuid), post_id, user_id, parent_id (optional reply), content, created_at
 
 Skills indexed by `domain` and `user_id`, sources/files by `skill_id`. DB auto-initializes on first API call (`initDB()` in route handlers) — creates tables with `IF NOT EXISTS`, runs `ALTER TABLE` migrations for new columns. No manual migration step.
 
@@ -105,6 +113,7 @@ Skills indexed by `domain` and `user_id`, sources/files by `skill_id`. DB auto-i
   - **DeepSeek** (`engine='deepseek'`): Requires `DEEPSEEK_API_KEY`. Routes through `api.deepseek.com/v1` directly.
 - **Search engines**: Both Tavily and DashScope (百炼) run via `Promise.all` in `multiSearch()`. Either API key missing just skips that engine (returns `[]`). DashScope is recommended for China-based deployments (low latency from Aliyun ECS).
 - **Auth**: Self-implemented JWT (not next-auth). PBKDF2 password hashing, HMAC-SHA256 tokens, HTTP-only `token` cookie, 7-day expiry. `JWT_SECRET` env var (falls back to dev-only default in development, throws in production).
+- **Auth proxy** ([proxy.ts](proxy.ts)): Not a Next.js `middleware.ts` — it's a custom proxy function imported by API route handlers. Three-tier authentication: `requireAuth` (returns 401), `optionalAuth` (sets `x-user-id` header), and unlisted routes (public). Configured via `config.matcher` to run on `/api/:path*`.
 - **Tailwind CSS v4** — `@tailwindcss/postcss` plugin in `postcss.config.mjs`, `@import 'tailwindcss'` in `globals.css`, no `tailwind.config.js`.
 - **`format: 'openclaw'`** — accepted by API validation. When used, after curation [lib/packager.ts](lib/packager.ts) scans the content for a "子文档计划" section (sub-doc plan) and generates reference docs + scripts in parallel via LLM calls. Files saved to `skill_files` table.
 - **Path alias** `@/*` — maps to project root (tsconfig.json).
