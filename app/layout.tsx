@@ -2,11 +2,16 @@ import type { Metadata } from 'next';
 import { AuthProvider } from '@/components/AuthProvider';
 import { Header } from '@/components/Header';
 import { BottomNavWrapper } from '@/components/BottomNavWrapper';
+import { PageTransition } from '@/components/PageTransition';
+import { PwaRegister } from '@/components/PwaRegister';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'SkillForge — AI Skill 发现与生成引擎',
   description: '按需从互联网挖掘已验证的 AI 交互知识，自动策展并生成标准格式的 skill 文件',
+  manifest: '/manifest.json',
+  icons: [{ rel: 'icon', url: '/icon.svg', type: 'image/svg+xml' }],
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'SkillForge' },
 };
 
 export default function RootLayout({
@@ -27,7 +32,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-black text-[#e3e2e2] font-body">
         <AuthProvider>
           <Header />
-          <main className="flex-1 w-full pt-14">{children}</main>
+          <main className="flex-1 w-full pt-14 pb-16 md:pb-0"><PageTransition>{children}</PageTransition></main>
+          <PwaRegister />
           <footer className="border-t border-zinc-900 bg-black text-zinc-600 text-xs shrink-0">
             <div className="max-w-7xl mx-auto px-8 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-4">

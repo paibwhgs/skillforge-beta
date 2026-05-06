@@ -1,16 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { user, loading, login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Already logged in → redirect to home
+  useEffect(() => {
+    if (!loading && user) router.replace('/');
+  }, [user, loading, router]);
+
+  if (loading) return null;
+  if (user) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,13 +40,13 @@ export default function LoginPage() {
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 w-[600px] h-[600px] bg-[#FF5C00]/5 rounded-full blur-[120px]" />
 
       <div className="w-full max-w-md">
-        <div className="glass-panel p-8 rounded-lg relative overflow-hidden">
+        <div className="glass-panel p-8 rounded-lg relative overflow-hidden animate-fadeInUp">
           {/* Accent line */}
           <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-[#508eff] via-[#ff5c00] to-[#508eff]" />
 
           <div className="mb-8 text-center">
-            <h1 className="font-display text-2xl text-white mb-2">登录 SkillForge</h1>
-            <p className="text-sm text-zinc-500">使用您的账号继续锻造。</p>
+            <h1 className="font-display text-2xl text-white mb-2 animate-fadeInUp">登录 SkillForge</h1>
+            <p className="text-sm text-zinc-500 animate-fadeInUp stagger-1">使用您的账号继续锻造。</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">

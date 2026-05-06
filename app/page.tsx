@@ -7,9 +7,40 @@ import type { SkillRecord } from '@/types';
 
 let recentSkillsCache: { data: SkillRecord[]; ts: number } | null = null;
 
+function getDomainKeywords(domain: string): string[] {
+  const words: string[] = [];
+  const parts = domain.split(/[\s,，\/、]+/).filter(Boolean);
+  for (const part of parts) {
+    let buf = '';
+    for (const ch of part) {
+      if (/[\u4e00-\u9fff]/.test(ch)) {
+        if (buf) { words.push(buf.toLowerCase()); buf = ''; }
+        words.push(ch);
+      } else if (/[a-zA-Z0-9]/.test(ch)) {
+        buf += ch;
+      } else {
+        if (buf) { words.push(buf.toLowerCase()); buf = ''; }
+      }
+    }
+    if (buf) words.push(buf.toLowerCase());
+  }
+  return words;
+}
+
+function computeKeywordOverlap(domain1: string, domain2: string): number {
+  const k1 = getDomainKeywords(domain1);
+  const k2 = getDomainKeywords(domain2);
+  const set1 = new Set(k1);
+  let overlap = 0;
+  for (const k of k2) {
+    if (set1.has(k)) overlap++;
+  }
+  return overlap;
+}
+
 export default function Home() {
   const [domain, setDomain] = useState('');
-  const [format, setFormat] = useState<'claude' | 'openclaw' | 'markdown'>('claude');
+  const [format, setFormat] = useState<'claude' | 'markdown'>('claude');
   const [depth, setDepth] = useState<'quick' | 'deep'>('quick');
   const [searchEnabled, setSearchEnabled] = useState(true);
   const [engine, setEngine] = useState(DEFAULT_MODEL.engine);
@@ -150,6 +181,43 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* Similar Recommendations */}
+      {(() => {
+        if (recentSkills.length < 3) return null;
+        const ref = recentSkills[0];
+        const candidates = recentSkills.slice(1);
+        const scored = candidates
+          .map((s) => ({ s, score: computeKeywordOverlap(ref.domain, s.domain) }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3);
+        if (scored.length === 0 || scored[0].score === 0) return null;
+        return (
+          <section className="w-full max-w-7xl mx-auto px-6 py-12">
+            <div className="flex items-center gap-3 mb-8">
+              <span className="material-symbols-outlined text-[#FF5C00]">recommend</span>
+              <h2 className="font-display text-2xl text-white">相似推荐</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {scored.map(({ s }) => (
+                <a
+                  key={s.id}
+                  href={`/skills/${s.id}`}
+                  className="lg:col-span-2 p-4 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-[#FF5C00]/30 hover:-translate-y-0.5 transition-all block animate-fadeInUp"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-8 h-8 rounded bg-zinc-900 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-zinc-400 text-lg">auto_awesome</span>
+                    </div>
+                    <h4 className="text-white text-sm font-bold truncate">{s.title}</h4>
+                  </div>
+                  <p className="text-zinc-600 text-xs line-clamp-1">{s.domain}</p>
+                </a>
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Technical Features */}
       <section className="w-full bg-zinc-950 border-t border-zinc-900 mt-12 px-6 py-24">

@@ -27,6 +27,7 @@ export interface GenerateResponse {
     domain: string;
     format: string;
     content: string;
+    score?: number;
     files?: SkillFile[];
     sources: { title: string; url: string }[];
     sources_level: 'rich' | 'sparse' | 'none';
@@ -48,6 +49,9 @@ export interface SkillRecord {
   bookmarked: number;
   depth: string;
   mode: string;
+  score: number;
+  engine?: string;
+  model?: string;
   created_at: string;
 }
 
@@ -79,6 +83,15 @@ export interface ChatRequest {
   model?: string;
 }
 
+export interface Collection {
+  id: string;
+  user_id: string;
+  name: string;
+  skill_count: number;
+  skill_ids: string[];
+  created_at: string;
+}
+
 export interface CommunityPost {
   id: string;
   user_id: string;
@@ -108,12 +121,10 @@ export interface ModelOption {
 
 export const MODEL_OPTIONS: ModelOption[] = [
   { label: 'DeepSeek V4 Flash', engine: 'opencode-go', model: 'deepseek-v4-flash' },
-  { label: 'DeepSeek V4 官方', engine: 'deepseek', model: 'deepseek-v4-flash' },
   { label: 'Qwen3.6 Plus', engine: 'opencode-go', model: 'qwen3.6-plus' },
-  { label: 'GLM-5.1', engine: 'opencode-go', model: 'glm-5.1' },
-  { label: 'Kimi K2.6', engine: 'opencode-go', model: 'kimi-k2.6' },
-  { label: 'GLM-5', engine: 'opencode-go', model: 'glm-5' },
-  { label: 'Kimi K2.5', engine: 'opencode-go', model: 'kimi-k2.5' },
+  { label: 'MiniMax M2.7', engine: 'opencode-go', model: 'minimax-m2.7' },
+  { label: 'MiniMax M2.5', engine: 'opencode-go', model: 'minimax-m2.5' },
+  { label: 'Qwen3.5 Plus', engine: 'opencode-go', model: 'qwen3.5-plus' },
 ];
 
 export const DEFAULT_MODEL = MODEL_OPTIONS[0];

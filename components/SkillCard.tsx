@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import type { SkillRecord } from '@/types';
+import type { SkillRecord, Collection } from '@/types';
 
 interface Props {
   skill: SkillRecord;
   variant?: 'featured' | 'default' | 'compact';
+  onDelete?: (id: string, e: React.MouseEvent) => void;
 }
 
-export function SkillCard({ skill, variant = 'default' }: Props) {
+export function SkillCard({ skill, variant = 'default', onDelete }: Props) {
   const router = useRouter();
   const navigate = () => router.push(`/skills/${skill.id}`);
   const [bookmarked, setBookmarked] = useState(skill.bookmarked === 1);
@@ -33,6 +34,50 @@ export function SkillCard({ skill, variant = 'default' }: Props) {
     }
   };
 
+  // ── Collection picker ──────────────────────────────────────
+  const [showCollectionPicker, setShowCollectionPicker] = useState(false);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(false);
+
+  const loadCollections = useCallback(async () => {
+    setLoadingCollections(true);
+    try {
+      const res = await fetch('/api/v1/collections');
+      const data = await res.json();
+      setCollections(data.collections || []);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingCollections(false);
+    }
+  }, []);
+
+  const toggleCollection = async (collectionId: string, currentlyIn: boolean) => {
+    // Optimistic update
+    setCollections((prev) =>
+      prev.map((c) => {
+        if (c.id !== collectionId) return c;
+        const newIds = currentlyIn
+          ? c.skill_ids.filter((id) => id !== skill.id)
+          : [...c.skill_ids, skill.id];
+        return { ...c, skill_ids: newIds, skill_count: newIds.length };
+      }),
+    );
+    try {
+      if (currentlyIn) {
+        await fetch(`/api/v1/collections/${collectionId}/skills/${skill.id}`, { method: 'DELETE' });
+      } else {
+        await fetch(`/api/v1/collections/${collectionId}/skills`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ skillId: skill.id }),
+        });
+      }
+    } catch {
+      loadCollections(); // revert on failure
+    }
+  };
+
   if (variant === 'featured') {
     return (
       <div
@@ -53,6 +98,12 @@ export function SkillCard({ skill, variant = 'default' }: Props) {
               <span className="material-symbols-outlined text-sm">schedule</span>
               {new Date(skill.created_at).toLocaleDateString('zh-CN')}
             </span>
+            {skill.score > 0 && (
+              <span className="flex items-center gap-1 text-emerald-400 font-bold">
+                <span className="material-symbols-outlined text-sm">stars</span>
+                {skill.score}/10
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -81,6 +132,12 @@ export function SkillCard({ skill, variant = 'default' }: Props) {
           <span className="px-2 py-1 bg-zinc-900 text-zinc-500 rounded text-[9px] font-label uppercase tracking-wider">
             {skill.format === 'claude' ? 'Claude Code' : skill.format === 'openclaw' ? 'OpenCLAW' : 'Markdown'}
           </span>
+          {skill.score > 0 && (
+            <span className="px-2 py-1 bg-emerald-900/30 text-emerald-400 rounded text-[9px] font-bold tracking-wider flex items-center gap-1">
+              <span className="material-symbols-outlined text-[10px]">stars</span>
+              {skill.score}/10
+            </span>
+          )}
         </div>
       </div>
     );
@@ -107,6 +164,7 @@ export function SkillCard({ skill, variant = 'default' }: Props) {
 
   // Default variant — full card with colored header and content preview
   return (
+    <>
     <div
       onClick={navigate}
       className="group relative bg-[#080808] border border-zinc-900 rounded-lg overflow-hidden flex flex-col hover:border-zinc-700 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
@@ -132,6 +190,12 @@ export function SkillCard({ skill, variant = 'default' }: Props) {
           <span className="bg-black/50 backdrop-blur-sm border border-white/10 text-zinc-300 font-label text-[10px] px-2 py-0.5 rounded">
             {skill.format === 'claude' ? 'Claude Code' : skill.format === 'openclaw' ? 'OpenCLAW' : 'Markdown'}
           </span>
+          {skill.score > 0 && (
+            <span className="bg-emerald-900/30 backdrop-blur-sm border border-emerald-500/20 text-emerald-400 font-bold text-[10px] px-2 py-0.5 rounded flex items-center gap-1">
+              <span className="material-symbols-outlined text-[10px]">stars</span>
+              {skill.score}/10
+            </span>
+          )}
         </div>
         <div className="absolute inset-0 bg-gradient-to-t from-[#080808] via-[#080808]/40 to-transparent" />
       </div>
@@ -153,16 +217,34 @@ export function SkillCard({ skill, variant = 'default' }: Props) {
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-zinc-900">
-          <button
-            onClick={toggleBookmark}
-            className={`material-symbols-outlined transition-all text-lg ${
-              bookmarked ? 'text-[#FF5C00] scale-110' : 'text-zinc-600 hover:text-zinc-400 hover:scale-110'
-            }`}
-            style={{ fontVariationSettings: bookmarked ? "'FILL' 1" : "'FILL' 0" }}
-            title={bookmarked ? '取消收藏' : '收藏'}
-          >
-            bookmark
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleBookmark}
+              className={`material-symbols-outlined transition-all text-lg ${
+                bookmarked ? 'text-[#FF5C00] scale-110' : 'text-zinc-600 hover:text-zinc-400 hover:scale-110'
+              }`}
+              style={{ fontVariationSettings: bookmarked ? "'FILL' 1" : "'FILL' 0" }}
+              title={bookmarked ? '取消收藏' : '收藏'}
+            >
+              bookmark
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowCollectionPicker(true); loadCollections(); }}
+              className="material-symbols-outlined text-zinc-600 hover:text-zinc-400 transition-all text-lg"
+              title="收藏夹"
+            >
+              playlist_add
+            </button>
+            {onDelete && (
+              <button
+                onClick={(e) => onDelete(skill.id, e)}
+                className="material-symbols-outlined text-zinc-600 hover:text-red-400 transition-all text-lg"
+                title="删除"
+              >
+                delete
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-2 text-zinc-500 text-[11px]">
             <span className="flex items-center gap-1">
               <span className="material-symbols-outlined text-sm">{theme.icon}</span>
@@ -178,5 +260,60 @@ export function SkillCard({ skill, variant = 'default' }: Props) {
         </div>
       </div>
     </div>
+
+    {/* Collection Picker Modal */}
+    {showCollectionPicker && (
+      <>
+        <div className="fixed inset-0 z-50 bg-black/60" onClick={() => setShowCollectionPicker(false)} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <div
+            className="pointer-events-auto bg-zinc-900 border border-zinc-700 rounded-xl p-4 shadow-2xl w-64"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm text-white font-medium">添加到收藏夹</h4>
+              <button
+                onClick={() => setShowCollectionPicker(false)}
+                className="material-symbols-outlined text-zinc-500 hover:text-white transition-colors text-lg"
+              >
+                close
+              </button>
+            </div>
+            {loadingCollections ? (
+              <div className="flex items-center gap-2 text-zinc-500 text-xs py-4">
+                <div className="w-4 h-4 border-2 border-[#FF5C00] border-t-transparent rounded-full animate-spin" />
+                加载中...
+              </div>
+            ) : collections.length === 0 ? (
+              <p className="text-zinc-500 text-xs py-4 text-center">暂无收藏夹</p>
+            ) : (
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {collections.map((c) => {
+                  const inCollection = c.skill_ids.includes(skill.id);
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => toggleCollection(c.id, inCollection)}
+                      className={`w-full text-left text-xs px-3 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                        inCollection
+                          ? 'bg-[#FF5C00]/10 text-[#FF5C00]'
+                          : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                      }`}
+                    >
+                      <span className={`material-symbols-outlined text-sm ${inCollection ? 'text-[#FF5C00]' : 'text-zinc-500'}`}>
+                        {inCollection ? 'check_box' : 'check_box_outline_blank'}
+                      </span>
+                      <span className="flex-1 truncate">{c.name}</span>
+                      <span className="text-[10px] text-zinc-500">{c.skill_count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    )}
+    </>
   );
 }

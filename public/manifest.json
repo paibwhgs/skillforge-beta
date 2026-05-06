@@ -1,0 +1,18 @@
+{
+  "name": "SkillForge",
+  "short_name": "SkillForge",
+  "description": "AI 驱动的技能合成引擎",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#FF5C00",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

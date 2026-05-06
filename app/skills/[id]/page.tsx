@@ -7,6 +7,37 @@ import { ChatPanel } from '@/components/ChatPanel';
 import { useAuth } from '@/components/AuthProvider';
 import type { SkillRecord, SkillFile } from '@/types';
 
+function getDomainKeywords(domain: string): string[] {
+  const words: string[] = [];
+  const parts = domain.split(/[\s,，\/、]+/).filter(Boolean);
+  for (const part of parts) {
+    let buf = '';
+    for (const ch of part) {
+      if (/[\u4e00-\u9fff]/.test(ch)) {
+        if (buf) { words.push(buf.toLowerCase()); buf = ''; }
+        words.push(ch);
+      } else if (/[a-zA-Z0-9]/.test(ch)) {
+        buf += ch;
+      } else {
+        if (buf) { words.push(buf.toLowerCase()); buf = ''; }
+      }
+    }
+    if (buf) words.push(buf.toLowerCase());
+  }
+  return words;
+}
+
+function computeKeywordOverlap(domain1: string, domain2: string): number {
+  const k1 = getDomainKeywords(domain1);
+  const k2 = getDomainKeywords(domain2);
+  const set1 = new Set(k1);
+  let overlap = 0;
+  for (const k of k2) {
+    if (set1.has(k)) overlap++;
+  }
+  return overlap;
+}
+
 interface SourceItem {
   title: string;
   url: string;
@@ -24,6 +55,7 @@ export default function SkillDetailPage() {
   const [error, setError] = useState('');
   const [communityPostId, setCommunityPostId] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
+  const [relatedSkills, setRelatedSkills] = useState<SkillRecord[]>([]);
 
   const fetchSkill = () => {
     setLoading(true);
@@ -52,6 +84,13 @@ export default function SkillDetailPage() {
 
   useEffect(() => {
     fetchSkill();
+    fetch('/api/v1/skills?limit=30')
+      .then((r) => r.json())
+      .then((data) => {
+        const list: SkillRecord[] = data.skills || [];
+        setRelatedSkills(list.filter((s) => s.id !== id));
+      })
+      .catch(() => {});
   }, [id]);
 
   const handleContentUpdate = (content: string) => {
@@ -67,6 +106,29 @@ export default function SkillDetailPage() {
     : sources.length >= 1
       ? 'sparse' as const
       : 'none' as const;
+
+  const handlePublish = async () => {
+    if (!skill || publishing) return;
+    setPublishing(true);
+    try {
+      const res = await fetch('/api/v1/community', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: skill.title,
+          content: skill.content.slice(0, 500),
+          skillId: skill.id,
+        }),
+      });
+      if (!res.ok) throw new Error('发布失败');
+      const data = await res.json();
+      setCommunityPostId(data.post.id);
+    } catch {
+      alert('发布失败，请重试');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black">
@@ -95,7 +157,7 @@ export default function SkillDetailPage() {
 
       {/* Skill Detail */}
       {skill && !loading && (
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-6 py-6 animate-fadeIn">
           {/* Back button */}
           <button
             onClick={() => router.push('/history')}
@@ -113,16 +175,41 @@ export default function SkillDetailPage() {
             <div className="flex-1 min-w-0 space-y-4">
               {/* Skill Header */}
               <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${modeLabel.class}`}>
+                <div className="flex items-center gap-3 mb-2 flex-wrap">
+                  <span className={`shrink-0 px-2 py-0.5 rounded text-[10px] font-bold ${modeLabel.class}`}>
                     {modeLabel.text}
                   </span>
-                  <span className="text-[10px] font-mono text-zinc-500">
+                  <span className="shrink-0 text-[10px] font-mono text-zinc-500">
                     {skill.format === 'claude' ? 'Claude Code' : skill.format === 'openclaw' ? 'OpenCLAW' : 'Markdown'}
                   </span>
-                  <span className="text-zinc-600 text-[10px] font-mono">
+                  {skill.engine && skill.model && (
+                    <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 font-mono" title={`引擎: ${skill.engine}`}>
+                      {skill.engine}/{skill.model}
+                    </span>
+                  )}
+                  <span className="shrink-0 text-zinc-600 text-[10px] font-mono">
                     {new Date(skill.created_at).toLocaleDateString('zh-CN')}
                   </span>
+                  {user && (
+                    communityPostId ? (
+                      <a
+                        href={`/community/${communityPostId}`}
+                        className="shrink-0 text-[10px] font-bold text-emerald-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
+                      >
+                        <span className="material-symbols-outlined text-sm">check_circle</span>
+                        已发布到社区
+                      </a>
+                    ) : (
+                      <button
+                        onClick={handlePublish}
+                        disabled={publishing}
+                        className="shrink-0 text-[10px] font-bold text-[#FF5C00] hover:text-[#FF5C00]/80 transition-colors flex items-center gap-1 disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-sm">forum</span>
+                        {publishing ? '发布中...' : '发布到社区'}
+                      </button>
+                    )
+                  )}
                 </div>
                 <h1 className="font-display text-2xl md:text-3xl text-white">{skill.title}</h1>
                 <p className="text-zinc-400 text-sm mt-0.5">{skill.domain}</p>
@@ -222,6 +309,7 @@ export default function SkillDetailPage() {
                   domain: skill.domain,
                   format: skill.format,
                   content: skill.content,
+                  score: skill.score,
                   files,
                   sources,
                   sources_level: sourcesLevel,
@@ -229,11 +317,47 @@ export default function SkillDetailPage() {
                   bookmarked: skill.bookmarked,
                 }}
               />
+
+              {/* Related Recommendations */}
+              {(() => {
+                if (relatedSkills.length === 0) return null;
+                const scored = relatedSkills
+                  .map((s) => ({ s, score: computeKeywordOverlap(skill.domain, s.domain) }))
+                  .sort((a, b) => b.score - a.score)
+                  .slice(0, 3)
+                  .filter((item) => item.score > 0);
+                if (scored.length === 0) return null;
+                return (
+                  <div className="pt-8">
+                    <div className="flex items-center gap-2 mb-5">
+                      <span className="material-symbols-outlined text-[#FF5C00] text-lg">recommend</span>
+                      <h2 className="font-display text-lg text-white">相关推荐</h2>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {scored.map(({ s }) => (
+                        <a
+                          key={s.id}
+                          href={`/skills/${s.id}`}
+                          className="p-4 rounded-xl border border-zinc-900 bg-zinc-950/50 hover:border-[#FF5C00]/30 hover:-translate-y-0.5 transition-all block"
+                        >
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 rounded bg-zinc-900 flex items-center justify-center shrink-0">
+                              <span className="material-symbols-outlined text-zinc-400 text-lg">auto_awesome</span>
+                            </div>
+                            <h4 className="text-white text-sm font-bold truncate">{s.title}</h4>
+                          </div>
+                          <p className="text-zinc-600 text-xs line-clamp-1">{s.domain}</p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Right: Chat Panel — permanently visible */}
             {user && (
-              <div className="w-full md:w-[420px] lg:w-[480px] shrink-0">
+              <div className="w-full md:w-[420px] lg:w-[480px] shrink-0 animate-fadeInUp stagger-3">
                 <div className="md:sticky md:top-20 md:h-[calc(100vh-7rem)] flex flex-col">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="material-symbols-outlined text-[#FF5C00] text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>

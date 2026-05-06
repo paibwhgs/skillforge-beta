@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { initDB, insertSkill, insertSources } from '@/lib/db';
+import { initDB, insertSkill, insertSources, extractScoreFromContent, stripScoreFromContent } from '@/lib/db';
 import { multiSearch } from '@/lib/search';
 import { curateStream } from '@/lib/curator';
 import { formatSkill, extractTitle } from '@/lib/formatter';
@@ -94,13 +94,15 @@ export async function POST(request: NextRequest) {
 
         // Phase 3: Format
         write('log', { type: 'format', text: '格式化输出中...', ts: now() });
-        const content = formatSkill(rawContent, format);
+        const score = extractScoreFromContent(rawContent);
+        const cleanedRaw = stripScoreFromContent(rawContent);
+        const content = formatSkill(cleanedRaw, format);
         const title = extractTitle(content);
-        console.error(`[stream] content length=${content.length}, title="${title}"`);
+        console.error(`[stream] content length=${content.length}, title="${title}", score=${score}`);
 
         // Save
         const userId = getUserId(request);
-        const id = await insertSkill(title, domain, format, content, depth, userId || undefined, mode);
+        const id = await insertSkill(title, domain, format, content, depth, userId || undefined, mode, score, engine, model);
         if (results.length > 0) {
           await insertSources(
             id,
@@ -116,6 +118,7 @@ export async function POST(request: NextRequest) {
             domain,
             format,
             content,
+            score,
             files: undefined,
             sources: results.map((r) => ({ title: r.title, url: r.url })),
             sources_level: level,

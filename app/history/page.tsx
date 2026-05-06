@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import type { SkillRecord } from '@/types';
+import type { SkillRecord, Collection } from '@/types';
 import { SkillCard } from '@/components/SkillCard';
 
 // Module-level cache for instant back-navigation
@@ -22,6 +22,13 @@ export default function HistoryPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showBookmarkFilter, setShowBookmarkFilter] = useState(false);
   const [bookmarkFilter, setBookmarkFilter] = useState<'all' | 'bookmarked'>('all');
+  const [formatFilter, setFormatFilter] = useState<'all' | 'claude' | 'openclaw' | 'markdown'>('all');
+  const [depthFilter, setDepthFilter] = useState<'all' | 'quick' | 'deep'>('all');
+  const [dateRange, setDateRange] = useState<'all' | '7d' | '30d' | '90d'>('all');
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [collectionFilter, setCollectionFilter] = useState<string>('all');
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [creating, setCreating] = useState(false);
   const perPage = 6;
 
   const toggleBookmark = async (id: string, current: number) => {
@@ -51,12 +58,15 @@ export default function HistoryPage() {
       setSkills(skillsCache.data);
       setLoading(false);
     }
-    fetch('/api/v1/skills?limit=50')
-      .then((r) => r.json())
-      .then((data) => {
-        const list = data.skills || [];
+    Promise.all([
+      fetch('/api/v1/skills?limit=50').then((r) => r.json()),
+      fetch('/api/v1/collections').then((r) => r.json()),
+    ])
+      .then(([skillsData, collectionsData]) => {
+        const list = skillsData.skills || [];
         skillsCache = { data: list, ts: Date.now() };
         setSkills(list);
+        setCollections(collectionsData.collections || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -87,6 +97,34 @@ export default function HistoryPage() {
       list = list.filter((s) => s.bookmarked === 1);
     }
 
+    // Filter by collection
+    if (collectionFilter !== 'all') {
+      const col = collections.find((c) => c.id === collectionFilter);
+      if (col) {
+        list = list.filter((s) => col.skill_ids.includes(s.id));
+      }
+    }
+
+    // Filter by format
+    if (formatFilter !== 'all') {
+      list = list.filter((s) => s.format === formatFilter);
+    }
+
+    // Filter by depth
+    if (depthFilter !== 'all') {
+      list = list.filter((s) => s.depth === depthFilter);
+    }
+
+    // Filter by date range
+    if (dateRange !== 'all') {
+      const cutoff = Date.now() - {
+        '7d': 7 * 86400000,
+        '30d': 30 * 86400000,
+        '90d': 90 * 86400000,
+      }[dateRange];
+      list = list.filter((s) => new Date(s.created_at).getTime() >= cutoff);
+    }
+
     // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -107,7 +145,7 @@ export default function HistoryPage() {
     }
 
     return list;
-  }, [skills, filterMode, bookmarkFilter, sortBy, searchQuery]);
+  }, [skills, filterMode, bookmarkFilter, formatFilter, depthFilter, dateRange, sortBy, searchQuery, collectionFilter, collections]);
 
   const totalPages = Math.ceil(filtered.length / perPage);
   const paginated = filtered.slice((page - 1) * perPage, page * perPage);
@@ -214,6 +252,48 @@ export default function HistoryPage() {
                   </span>
                 </div>
 
+                {/* Collection Filter */}
+                <div className="flex items-center gap-1">
+                  <div className="relative">
+                    <select
+                      value={collectionFilter}
+                      onChange={(e) => { setCollectionFilter(e.target.value); setPage(1); }}
+                      className="appearance-none bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs px-4 pr-10 py-2 rounded focus:outline-none focus:border-[#FF5C00] transition-colors cursor-pointer"
+                    >
+                      <option value="all">所有收藏夹</option>
+                      {collections.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.skill_count})
+                        </option>
+                      ))}
+                    </select>
+                    <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-zinc-600 pointer-events-none text-sm">
+                      expand_more
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const name = prompt('输入收藏夹名称：');
+                      if (name && name.trim()) {
+                        fetch('/api/v1/collections', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ name: name.trim() }),
+                        })
+                          .then(r => r.json())
+                          .then(data => {
+                            setCollections(prev => [{ id: data.id, user_id: '', name: name.trim(), skill_count: 0, skill_ids: [], created_at: '' }, ...prev]);
+                          })
+                          .catch(() => alert('创建失败'));
+                      }
+                    }}
+                    className="w-8 h-8 flex items-center justify-center bg-zinc-900 border border-zinc-800 rounded text-zinc-400 hover:text-[#FF5C00] hover:border-[#FF5C00]/50 transition-all text-sm"
+                    title="新建收藏夹"
+                  >
+                    <span className="material-symbols-outlined text-sm">add</span>
+                  </button>
+                </div>
+
                 <button
                   onClick={() => setShowBookmarkFilter(!showBookmarkFilter)}
                   className={`bg-zinc-900 border text-xs px-4 py-2 rounded transition-all flex items-center gap-2 ${
@@ -241,40 +321,198 @@ export default function HistoryPage() {
               </div>
             </div>
 
-            {/* Bookmark Filter Panel */}
+            {/* Advanced Filter Panel */}
             {showBookmarkFilter && (
-              <div className="p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg flex items-center gap-4">
-                <span className="text-xs text-zinc-400">收藏状态</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => { setBookmarkFilter('all'); setPage(1); }}
-                    className={`text-xs px-3 py-1.5 rounded transition-all ${
-                      bookmarkFilter === 'all'
-                        ? 'bg-[#FF5C00] text-white'
-                        : 'bg-zinc-800 text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    全部
-                  </button>
-                  <button
-                    onClick={() => { setBookmarkFilter('bookmarked'); setPage(1); }}
-                    className={`text-xs px-3 py-1.5 rounded transition-all flex items-center gap-1 ${
-                      bookmarkFilter === 'bookmarked'
-                        ? 'bg-[#FF5C00] text-white'
-                        : 'bg-zinc-800 text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
-                    已收藏
-                  </button>
+              <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg space-y-4 animate-fadeInUp">
+                {/* Format */}
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-zinc-400 w-16 shrink-0">格式</span>
+                  <div className="flex gap-2">
+                    {(['all', 'claude', 'openclaw', 'markdown'] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => { setFormatFilter(f); setPage(1); }}
+                        className={`text-xs px-3 py-1.5 rounded transition-all ${
+                          formatFilter === f
+                            ? 'bg-[#FF5C00] text-white'
+                            : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {f === 'all' ? '全部' : f === 'claude' ? 'Claude Code' : f === 'openclaw' ? 'OpenCLAW' : 'Markdown'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Depth */}
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-zinc-400 w-16 shrink-0">深度</span>
+                  <div className="flex gap-2">
+                    {(['all', 'quick', 'deep'] as const).map((d) => (
+                      <button
+                        key={d}
+                        onClick={() => { setDepthFilter(d); setPage(1); }}
+                        className={`text-xs px-3 py-1.5 rounded transition-all ${
+                          depthFilter === d
+                            ? 'bg-[#FF5C00] text-white'
+                            : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {d === 'all' ? '全部' : d === 'quick' ? '快速' : '深度'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Time Range */}
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-zinc-400 w-16 shrink-0">时间</span>
+                  <div className="flex gap-2">
+                    {(['all', '7d', '30d', '90d'] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => { setDateRange(t); setPage(1); }}
+                        className={`text-xs px-3 py-1.5 rounded transition-all ${
+                          dateRange === t
+                            ? 'bg-[#FF5C00] text-white'
+                            : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {t === 'all' ? '全部' : t === '7d' ? '近 7 天' : t === '30d' ? '近 30 天' : '近 90 天'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {/* Bookmark */}
+                <div className="flex items-center gap-4">
+                  <span className="text-xs text-zinc-400 w-16 shrink-0">收藏</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setBookmarkFilter('all'); setPage(1); }}
+                      className={`text-xs px-3 py-1.5 rounded transition-all ${
+                        bookmarkFilter === 'all'
+                          ? 'bg-[#FF5C00] text-white'
+                          : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      全部
+                    </button>
+                    <button
+                      onClick={() => { setBookmarkFilter('bookmarked'); setPage(1); }}
+                      className={`text-xs px-3 py-1.5 rounded transition-all flex items-center gap-1 ${
+                        bookmarkFilter === 'bookmarked'
+                          ? 'bg-[#FF5C00] text-white'
+                          : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>bookmark</span>
+                      已收藏
+                    </button>
+                  </div>
+                </div>
+
+                {/* Collection Management */}
+                <div className="border-t border-zinc-800 pt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs text-zinc-400">收藏夹管理</span>
+                    <div className="flex-1 border-t border-zinc-800" />
+                  </div>
+                  {/* Create */}
+                  <div className="flex gap-2 mb-3">
+                    <input
+                      value={newCollectionName}
+                      onChange={(e) => setNewCollectionName(e.target.value)}
+                      placeholder="新收藏夹名称..."
+                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#FF5C00] placeholder:text-zinc-600"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const btn = document.getElementById('create-collection-btn');
+                          btn?.click();
+                        }
+                      }}
+                    />
+                    <button
+                      id="create-collection-btn"
+                      disabled={creating || !newCollectionName.trim()}
+                      onClick={async () => {
+                        const name = newCollectionName.trim();
+                        if (!name) return;
+                        setCreating(true);
+                        try {
+                          const res = await fetch('/api/v1/collections', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name }),
+                          });
+                          if (res.ok) {
+                            setNewCollectionName('');
+                            const data = await res.json();
+                            setCollections((prev) => [
+                              { id: data.id, user_id: '', name: data.name, skill_count: 0, skill_ids: [], created_at: new Date().toISOString() },
+                              ...prev,
+                            ]);
+                          }
+                        } catch {
+                          // ignore
+                        } finally {
+                          setCreating(false);
+                        }
+                      }}
+                      className="bg-[#FF5C00] text-white px-3 py-1.5 rounded text-xs font-bold hover:opacity-90 transition disabled:opacity-50"
+                    >
+                      {creating ? '...' : '创建'}
+                    </button>
+                  </div>
+                  {/* List */}
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {collections.length === 0 ? (
+                      <p className="text-xs text-zinc-600 text-center py-2">暂无收藏夹</p>
+                    ) : (
+                      collections.map((c) => (
+                        <div key={c.id} className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-zinc-800/50">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              onClick={() => { setCollectionFilter(c.id === collectionFilter ? 'all' : c.id); setPage(1); }}
+                              className={`material-symbols-outlined text-sm cursor-pointer ${
+                                collectionFilter === c.id ? 'text-[#FF5C00]' : 'text-zinc-500 hover:text-zinc-300'
+                              }`}
+                              style={{ fontVariationSettings: collectionFilter === c.id ? "'FILL' 1" : "'FILL' 0" }}
+                            >
+                              folder
+                            </span>
+                            <span className="text-xs text-zinc-300 truncate">{c.name}</span>
+                            <span className="text-[10px] text-zinc-600">{c.skill_count}</span>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`确定删除收藏夹「${c.name}」？`)) return;
+                              try {
+                                const res = await fetch(`/api/v1/collections/${c.id}`, { method: 'DELETE' });
+                                if (res.ok) {
+                                  setCollections((prev) => prev.filter((x) => x.id !== c.id));
+                                  if (collectionFilter === c.id) setCollectionFilter('all');
+                                }
+                              } catch {
+                                // ignore
+                              }
+                            }}
+                            className="material-symbols-outlined text-zinc-600 hover:text-red-400 transition-colors text-sm"
+                            title="删除"
+                          >
+                            delete
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Card Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginated.map((s) => (
-                <SkillCard key={s.id} skill={s} />
+              {paginated.map((s, i) => (
+                <div key={s.id} className="animate-fadeInUp" style={{ animationDelay: `${(i % 6) * 60}ms` }}>
+                  <SkillCard skill={s} onDelete={handleDelete} />
+                </div>
               ))}
 
               {/* CTA Card */}
@@ -289,125 +527,49 @@ export default function HistoryPage() {
               </div>
             </div>
 
-            {/* Data Table */}
-            <div className="bg-[#080808] border border-zinc-900 rounded-lg overflow-hidden">
-              <div className="p-4 border-b border-zinc-900 flex justify-between items-center">
-                <h2 className="font-display text-sm text-white flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[#FF5C00] text-lg">history</span>
-                  原始日志
-                </h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-zinc-900/50 text-zinc-500 uppercase tracking-widest text-[10px] font-label">
-                    <tr>
-                      <th className="px-6 py-4 font-semibold">SKILL 标题</th>
-                      <th className="px-6 py-4 font-semibold">模式</th>
-                      <th className="px-6 py-4 font-semibold">收藏</th>
-                      <th className="px-6 py-4 font-semibold">日期</th>
-                      <th className="px-6 py-4 font-semibold text-right">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-900">
-                    {paginated.map((s) => {
-                      const mode = modeLabel(s);
-                      return (
-                        <tr
-                          key={s.id}
-                          onClick={() => router.push(`/skills/${s.id}`)}
-                          className="hover:bg-zinc-900/30 transition-colors group cursor-pointer"
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4">
+                <span className="text-[10px] font-label text-zinc-500">
+                  共 {filtered.length} 条
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                    disabled={page === 1}
+                    className="min-w-[36px] w-8 h-9 md:w-8 md:h-8 flex items-center justify-center border border-zinc-800 rounded text-zinc-500 hover:border-[#FF5C00] hover:text-[#FF5C00] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-sm">chevron_left</span>
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                    .map((p, i, arr) => (
+                      <span key={p} className="contents">
+                        {i > 0 && arr[i - 1] !== p - 1 && (
+                          <span className="min-w-[36px] w-8 h-9 md:w-8 md:h-8 flex items-center justify-center text-zinc-600 text-xs">...</span>
+                        )}
+                        <button
+                          onClick={() => setPage(p)}
+                          className={`min-w-[36px] w-8 h-9 md:w-8 md:h-8 flex items-center justify-center rounded text-[10px] font-bold transition-all ${
+                            page === p
+                              ? 'bg-[#FF5C00] text-white'
+                              : 'border border-zinc-800 text-zinc-500 hover:border-[#FF5C00] hover:text-[#FF5C00]'
+                          }`}
                         >
-                          <td className="px-6 py-4 text-zinc-300 font-medium">{s.title}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${mode.class}`}>
-                              {mode.text}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); toggleBookmark(s.id, s.bookmarked); }}
-                              className={`material-symbols-outlined text-lg transition-all ${
-                                s.bookmarked ? 'text-[#FF5C00]' : 'text-zinc-600 hover:text-zinc-400'
-                              }`}
-                              style={{ fontVariationSettings: s.bookmarked ? "'FILL' 1" : "'FILL' 0" }}
-                              title={s.bookmarked ? '取消收藏' : '收藏'}
-                            >
-                              bookmark
-                            </button>
-                          </td>
-                          <td className="px-6 py-4 text-zinc-500">
-                            {new Date(s.created_at).toLocaleDateString('zh-CN')}
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); router.push(`/skills/${s.id}`); }}
-                                className="material-symbols-outlined text-zinc-600 hover:text-white transition-colors text-lg"
-                                title="查看"
-                              >
-                                visibility
-                              </button>
-                              <button
-                                onClick={(e) => handleDelete(s.id, e)}
-                                disabled={deleting === s.id}
-                                className="material-symbols-outlined text-zinc-600 hover:text-red-400 transition-colors text-lg disabled:opacity-30"
-                                title="删除"
-                              >
-                                {deleting === s.id ? 'hourglass_empty' : 'delete'}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="p-4 bg-zinc-900/20 flex items-center justify-between">
-                  <span className="text-[10px] font-label text-zinc-500">
-                    显示 {filtered.length} 条目中的 {paginated.length} 条
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page === 1}
-                      className="w-8 h-8 flex items-center justify-center border border-zinc-800 rounded text-zinc-500 hover:border-[#FF5C00] hover:text-[#FF5C00] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <span className="material-symbols-outlined text-sm">chevron_left</span>
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                      .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-                      .map((p, i, arr) => (
-                        <span key={p} className="contents">
-                          {i > 0 && arr[i - 1] !== p - 1 && (
-                            <span className="w-8 h-8 flex items-center justify-center text-zinc-600 text-xs">...</span>
-                          )}
-                          <button
-                            onClick={() => setPage(p)}
-                            className={`w-8 h-8 flex items-center justify-center rounded text-[10px] font-bold transition-all ${
-                              page === p
-                                ? 'bg-[#FF5C00] text-white'
-                                : 'border border-zinc-800 text-zinc-500 hover:border-[#FF5C00] hover:text-[#FF5C00]'
-                            }`}
-                          >
-                            {p}
-                          </button>
-                        </span>
-                      ))}
-                    <button
-                      onClick={() => setPage(Math.min(totalPages, page + 1))}
-                      disabled={page === totalPages}
-                      className="w-8 h-8 flex items-center justify-center border border-zinc-800 rounded text-zinc-500 hover:border-[#FF5C00] hover:text-[#FF5C00] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <span className="material-symbols-outlined text-sm">chevron_right</span>
-                    </button>
-                  </div>
+                          {p}
+                        </button>
+                      </span>
+                    ))}
+                  <button
+                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                    disabled={page === totalPages}
+                    className="min-w-[36px] w-8 h-9 md:w-8 md:h-8 flex items-center justify-center border border-zinc-800 rounded text-zinc-500 hover:border-[#FF5C00] hover:text-[#FF5C00] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </>
         )}
       </div>

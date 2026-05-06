@@ -16,12 +16,12 @@ export function BottomNav() {
     <nav className="fixed bottom-0 w-full z-50 md:hidden bg-black/90 backdrop-blur-xl border-t border-zinc-800 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = item.href !== '#' && pathname.startsWith(item.href);
           return (
             <a
               key={item.label}
               href={item.href}
-              className={`flex flex-col items-center justify-center text-[10px] uppercase tracking-widest transition-all ${
+              className={`flex flex-col items-center justify-center text-[10px] uppercase tracking-widest transition-all active:scale-90 ${
                 isActive
                   ? 'text-[#FF5C00] scale-110'
                   : 'text-zinc-600 hover:text-zinc-300'

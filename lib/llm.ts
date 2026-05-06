@@ -59,7 +59,7 @@ export async function chatOpenCodeGo(opts: ChatOpts & { model: string }): Promis
         { role: 'user', content: opts.user },
       ],
       temperature: opts.temperature ?? 0.7,
-      max_tokens: opts.maxTokens ?? 4096,
+      max_tokens: opts.maxTokens ?? 16384,
     }),
   });
 

@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
   }
 
   const { skillId, message, history = [] } = body;
-  const engine = body.engine || 'deepseek';
-  const model = body.model || 'deepseek-chat';
+  const engine = body.engine || 'opencode-go';
+  const model = body.model || 'deepseek-v4-flash';
 
   if (!skillId || !message) {
     return new Response(JSON.stringify({ error: 'skillId and message required' }), { status: 400 });

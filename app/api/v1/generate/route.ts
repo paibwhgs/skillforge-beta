@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initDB, insertSkill, insertSources } from '@/lib/db';
+import { initDB, insertSkill, insertSources, extractScoreFromContent, stripScoreFromContent } from '@/lib/db';
 import { multiSearch } from '@/lib/search';
 import { curate, directGenerate } from '@/lib/curator';
 import { formatSkill, extractTitle } from '@/lib/formatter';
@@ -43,10 +43,12 @@ export async function POST(request: NextRequest) {
     if (!rawContent.trim()) {
       return NextResponse.json({ error: 'AI 返回了空内容，请重试。如果持续失败，可尝试切换模型或换一个领域。' }, { status: 500 });
     }
-    const content = formatSkill(rawContent, format);
+    const score = extractScoreFromContent(rawContent);
+    const cleanedRaw = stripScoreFromContent(rawContent);
+    const content = formatSkill(cleanedRaw, format);
     const title = extractTitle(content);
     const userId = getUserId(request);
-    const id = await insertSkill(title, domain, format, content, depth, userId || undefined, mode);
+    const id = await insertSkill(title, domain, format, content, depth, userId || undefined, mode, score, engine, model);
 
     return NextResponse.json({
       success: true,
@@ -56,6 +58,7 @@ export async function POST(request: NextRequest) {
         domain,
         format,
         content,
+        score,
         files: undefined,
         sources: [],
         sources_level: 'none' as const,
@@ -77,12 +80,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Phase 3: Format
-  const content = formatSkill(rawContent, format);
+  const score = extractScoreFromContent(rawContent);
+  const cleanedRaw = stripScoreFromContent(rawContent);
+  const content = formatSkill(cleanedRaw, format);
   const title = extractTitle(content);
 
   // Save to DB
   const userId = getUserId(request);
-  const id = await insertSkill(title, domain, format, content, depth, userId || undefined, mode);
+  const id = await insertSkill(title, domain, format, content, depth, userId || undefined, mode, score, engine, model);
   await insertSources(
     id,
     results.map((r) => ({ title: r.title, url: r.url })),
@@ -96,6 +101,7 @@ export async function POST(request: NextRequest) {
       domain,
       format,
       content,
+      score,
       files: undefined,
       sources: results.map((r) => ({ title: r.title, url: r.url })),
       sources_level: level,

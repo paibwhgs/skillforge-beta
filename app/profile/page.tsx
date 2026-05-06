@@ -40,7 +40,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-black pt-14">
       <div className="max-w-5xl mx-auto px-6 py-12">
         {/* Profile Header */}
-        <div className="flex items-center gap-6 mb-12">
+        <div className="flex items-center gap-6 mb-12 animate-fadeInUp">
           <div className="w-16 h-16 rounded-full bg-[#FF5C00]/20 border-2 border-[#FF5C00]/30 flex items-center justify-center shrink-0">
             <span className="text-2xl font-display font-bold text-[#FF5C00]">
               {user.username.charAt(0).toUpperCase()}
@@ -56,7 +56,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Skills Section */}
-        <div className="mb-6">
+        <div className="mb-6 animate-fadeInUp stagger-1">
           <h2 className="font-display text-lg text-white font-bold mb-2">我的 Skill</h2>
           <p className="text-zinc-500 text-sm">共生成 {skills.length} 个 skill</p>
         </div>
@@ -72,7 +72,7 @@ export default function ProfilePage() {
             ))}
           </div>
         ) : skills.length === 0 ? (
-          <div className="text-center py-16 border border-dashed border-zinc-900 rounded-xl">
+          <div className="text-center py-16 border border-dashed border-zinc-900 rounded-xl animate-fadeInUp stagger-2">
             <span className="material-symbols-outlined text-4xl text-zinc-800 mb-4 block">auto_awesome</span>
             <p className="text-zinc-500 mb-2">还没有生成过 skill</p>
             <button
@@ -84,8 +84,10 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {skills.map((skill) => (
-              <SkillCard key={skill.id} skill={skill} variant="compact" />
+            {skills.map((skill, i) => (
+              <div key={skill.id} className="animate-fadeInUp" style={{ animationDelay: `${(i % 6) * 60}ms` }}>
+                <SkillCard skill={skill} variant="compact" />
+              </div>
             ))}
           </div>
         )}

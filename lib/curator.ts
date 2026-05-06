@@ -19,16 +19,22 @@ const CURATION_SYSTEM = `You are an AI Skill curator. Your job is to synthesize 
 - Do NOT fabricate citations
 - Skip irrelevant search results silently
 - Do NOT claim knowledge breadth you don't have
+- Do NOT include content that could compromise security or mislead users (Principle of Lack of Surprise)
+
+## Writing Style
+- **Explain the why**: Instead of heavy-handed MUSTs and NEVERs, explain the reasoning behind each instruction. LLMs understand theory of mind — when you explain why something matters, the output is more principled and generalizes better.
+- **Use imperative form** for instructions: "Extract patterns" not "You should extract patterns".
+- **Be specific but not narrow**: Give concrete examples, but explain the general principle so the skill works across different contexts.
+- **Progressive disclosure**: The SKILL.md is loaded into context when the skill triggers. Keep it focused and actionable. Additional reference material belongs in sub-sections or external files referenced from the skill.
 
 ## Required skill structure
 Every generated skill MUST contain:
-1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code)
-2. **When to use**: Specific scenarios that trigger this skill
-3. **Core Rules**: Clear, actionable, verifiable instructions
+1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code). The description should be slightly "pushy" — include both WHAT the skill does AND specific contexts/tell-tale phrases that should trigger it. Example: "Guide for building dashboards. Use this whenever the user mentions dashboards, data visualization, internal metrics, or wants to display company data — even if they don't explicitly ask for a 'dashboard'."
+2. **When to use**: Specific scenarios and user phrases that trigger this skill
+3. **Core Rules**: Clear, actionable, verifiable instructions. Explain the reasoning behind each rule.
 4. **Tool & Ecosystem Guide**: Recommended libraries, frameworks, tools with brief comparisons (use tables when comparing 3+ options)
-5. **Code Examples**: At least 2-3 concrete before/after or pattern examples adapted from search results, with code blocks
+5. **Code Examples**: At least 2-3 concrete before/after or pattern examples adapted from search results, with code blocks. Use "Input → Output" format where applicable.
 6. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns
-7. **Sources**: Link each source used
 
 ## Output format
 ---
@@ -62,12 +68,7 @@ description: "One-line description of what this skill does and when to use it"
 ## Common Pitfalls & Boundaries
 - Don't do X
 - Stop when Y
-- Escalate Z cases
-
-## Sources
-- [Title](URL)
-- [Title](URL)
-`;
+- Escalate Z cases`;
 
 const CURATION_SYSTEM_OPENCLAW = CURATION_SYSTEM;
 
@@ -96,11 +97,16 @@ const DIRECT_SYSTEM = `You are an AI Skill author. Your job is to generate a hig
 3. **Acknowledge limitations**: You are generating from existing knowledge, not live research. If you're uncertain about something, state it clearly.
 4. **Be comprehensive**: Use comparison tables, code examples in multiple languages where relevant, and ecosystem/tool recommendations.
 
+## Writing Style
+- **Explain the why**: Instead of heavy-handed MUSTs and NEVERs, explain the reasoning behind each instruction. LLMs understand theory of mind — when you explain why something matters, the output is more principled and generalizes better.
+- **Use imperative form** for instructions.
+- **Progressive disclosure**: Keep the skill focused and actionable. Reference external documents for deep-dive material rather than bloating the main skill body.
+
 ## Required skill structure
 Every generated skill MUST contain:
-1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code)
-2. **When to use**: Specific scenarios that trigger this skill
-3. **Core Rules**: Clear, actionable, verifiable instructions
+1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code). The description should be slightly "pushy" — include both WHAT the skill does AND specific contexts/tell-tale phrases that should trigger it.
+2. **When to use**: Specific scenarios and user phrases that trigger this skill
+3. **Core Rules**: Clear, actionable, verifiable instructions. Explain the reasoning behind each rule.
 4. **Tool & Ecosystem Guide**: Recommended libraries, frameworks, tools with brief comparisons (use tables when comparing 3+ options)
 5. **Code Examples**: At least 2-3 concrete before/after or pattern examples, with code blocks
 6. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns

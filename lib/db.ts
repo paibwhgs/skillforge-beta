@@ -1,6 +1,6 @@
 import { createClient, type Row, type Client } from '@libsql/client';
 import { v4 as uuid } from 'uuid';
-import type { SkillRecord, SkillSource, SkillFile, UserRecord, CommunityPost, CommunityComment } from '@/types';
+import type { SkillRecord, SkillSource, SkillFile, UserRecord, Collection, CommunityPost, CommunityComment } from '@/types';
 
 let db: Client | null = null;
 let initialized = false;
@@ -24,8 +24,24 @@ function rowToSkill(r: Row): SkillRecord {
     bookmarked: Number(r.bookmarked || 0),
     depth: String(r.depth),
     mode: String(r.mode || 'auto'),
+    score: Number(r.score || 0),
+    engine: r.engine ? String(r.engine) : undefined,
+    model: r.model ? String(r.model) : undefined,
     created_at: String(r.created_at),
   };
+}
+
+export function extractScoreFromContent(content: string): number {
+  const match = content.match(/<!--\s*score\s*:\s*(\d+(?:\.\d+)?)\s*-->/i);
+  if (match) {
+    const score = parseFloat(match[1]);
+    return Math.max(0, Math.min(10, score));
+  }
+  return 0;
+}
+
+export function stripScoreFromContent(content: string): string {
+  return content.replace(/<!--\s*score\s*:\s*\d+(?:\.\d+)?\s*-->\s*\n?/gi, '').trim();
 }
 
 function rowToSource(r: Row): SkillSource {
@@ -133,11 +149,32 @@ export async function initDB() {
   `);
   await c.execute('CREATE INDEX IF NOT EXISTS idx_community_comments_post ON community_comments(post_id)');
 
+  // Collection tables
+  await c.execute(`
+    CREATE TABLE IF NOT EXISTS skill_collections (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+  await c.execute(`
+    CREATE TABLE IF NOT EXISTS collection_skills (
+      collection_id TEXT NOT NULL,
+      skill_id TEXT NOT NULL,
+      PRIMARY KEY (collection_id, skill_id)
+    )
+  `);
+  await c.execute('CREATE INDEX IF NOT EXISTS idx_collection_skills_col ON collection_skills(collection_id)');
+
   // Migrate existing tables — add columns that may not exist yet
   for (const stmt of [
     "ALTER TABLE skills ADD COLUMN user_id TEXT DEFAULT ''",
     "ALTER TABLE skills ADD COLUMN mode TEXT DEFAULT 'auto'",
     "ALTER TABLE skills ADD COLUMN bookmarked INTEGER DEFAULT 0",
+    "ALTER TABLE skills ADD COLUMN score REAL DEFAULT 0",
+    "ALTER TABLE skills ADD COLUMN engine TEXT DEFAULT ''",
+    "ALTER TABLE skills ADD COLUMN model TEXT DEFAULT ''",
   ]) {
     try { await c.execute(stmt); } catch { /* column may already exist */ }
   }
@@ -152,12 +189,15 @@ export async function insertSkill(
   depth: string = 'quick',
   userId?: string,
   mode: string = 'auto',
+  score?: number,
+  engine?: string,
+  model?: string,
 ): Promise<string> {
   const c = getDb();
   const id = uuid();
   await c.execute({
-    sql: 'INSERT INTO skills (id, title, domain, format, content, depth, user_id, mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    args: [id, title, domain, format, content, depth, userId || '', mode],
+    sql: 'INSERT INTO skills (id, title, domain, format, content, depth, user_id, mode, score, engine, model) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    args: [id, title, domain, format, content, depth, userId || '', mode, score ?? 0, engine || '', model || ''],
   });
   return id;
 }
@@ -317,9 +357,11 @@ export async function saveChatMessage(skillId: string, role: string, content: st
 
 export async function updateSkillContent(id: string, content: string): Promise<boolean> {
   const c = getDb();
+  const score = extractScoreFromContent(content);
+  const cleanContent = stripScoreFromContent(content);
   const result = await c.execute({
-    sql: 'UPDATE skills SET content = ? WHERE id = ?',
-    args: [content, id],
+    sql: 'UPDATE skills SET content = ?, score = ? WHERE id = ?',
+    args: [cleanContent, score, id],
   });
   return result.rowsAffected > 0;
 }
@@ -470,4 +512,63 @@ export async function getCommunityPostBySkillId(skillId: string): Promise<Commun
   if (!rows.rows[0]) return null;
   const r = rows.rows[0];
   return rowToCommunityPost(r, String(r.username), Number(r.comment_count || 0));
+}
+
+// ── Collections ────────────────────────────────────────────
+
+export async function createCollection(userId: string, name: string): Promise<string> {
+  const c = getDb();
+  const id = uuid();
+  await c.execute({
+    sql: 'INSERT INTO skill_collections (id, user_id, name) VALUES (?, ?, ?)',
+    args: [id, userId, name],
+  });
+  return id;
+}
+
+export async function getCollections(userId: string): Promise<Collection[]> {
+  const c = getDb();
+  const rows = await c.execute({
+    sql: `SELECT c.*, GROUP_CONCAT(cs.skill_id) AS skill_ids_str
+      FROM skill_collections c
+      LEFT JOIN collection_skills cs ON cs.collection_id = c.id
+      WHERE c.user_id = ?
+      GROUP BY c.id
+      ORDER BY c.created_at DESC`,
+    args: [userId],
+  });
+  return rows.rows.map((r) => {
+    const skillIdsStr = String(r.skill_ids_str || '');
+    const skillIds = skillIdsStr ? skillIdsStr.split(',').filter(Boolean) : [];
+    return {
+      id: String(r.id),
+      user_id: String(r.user_id),
+      name: String(r.name),
+      skill_count: skillIds.length,
+      skill_ids: skillIds,
+      created_at: String(r.created_at),
+    };
+  });
+}
+
+export async function addSkillToCollection(collectionId: string, skillId: string): Promise<void> {
+  const c = getDb();
+  await c.execute({
+    sql: 'INSERT OR IGNORE INTO collection_skills (collection_id, skill_id) VALUES (?, ?)',
+    args: [collectionId, skillId],
+  });
+}
+
+export async function removeSkillFromCollection(collectionId: string, skillId: string): Promise<void> {
+  const c = getDb();
+  await c.execute({
+    sql: 'DELETE FROM collection_skills WHERE collection_id = ? AND skill_id = ?',
+    args: [collectionId, skillId],
+  });
+}
+
+export async function deleteCollection(id: string): Promise<void> {
+  const c = getDb();
+  await c.execute({ sql: 'DELETE FROM collection_skills WHERE collection_id = ?', args: [id] });
+  await c.execute({ sql: 'DELETE FROM skill_collections WHERE id = ?', args: [id] });
 }

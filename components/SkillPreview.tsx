@@ -162,6 +162,12 @@ export function SkillPreview({ skill }: Props) {
             无搜索
           </span>
         )}
+        {(skill.score ?? 0) > 0 && (
+          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-900/30 text-emerald-400 border border-emerald-500/20 font-bold flex items-center gap-1">
+            <span className="material-symbols-outlined text-[10px]">stars</span>
+            质量 {(skill.score ?? 0)}/10
+          </span>
+        )}
       </div>
 
       {/* Editor Card */}

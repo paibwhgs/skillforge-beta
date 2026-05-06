@@ -87,7 +87,7 @@ export async function* chatStreamOpenCodeGo(opts: ChatOpts & { model: string }):
         { role: 'user', content: opts.user },
       ],
       temperature: opts.temperature ?? 0.7,
-      max_tokens: opts.maxTokens ?? 4096,
+      max_tokens: opts.maxTokens ?? 16384,
     }),
   });
 
@@ -102,10 +102,18 @@ export async function* chatStreamOpenCodeGo(opts: ChatOpts & { model: string }):
   const reader = res.body!.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let reasoningBuffer: string[] = [];
+  let yieldedContent = false;
 
   while (true) {
     const { done, value } = await reader.read();
-    if (done) break;
+    if (done) {
+      // Stream ended but no content was ever yielded — flush reasoning as fallback.
+      if (!yieldedContent && reasoningBuffer.length > 0) {
+        yield reasoningBuffer.join('');
+      }
+      break;
+    }
 
     buffer += decoder.decode(value, { stream: true });
     const lines = buffer.split('\n');
@@ -115,12 +123,22 @@ export async function* chatStreamOpenCodeGo(opts: ChatOpts & { model: string }):
       const trimmed = line.trim();
       if (!trimmed || !trimmed.startsWith('data:')) continue;
       const payload = trimmed.slice(5).trim();
-      if (payload === '[DONE]') return;
+      if (payload === '[DONE]') {
+        if (!yieldedContent && reasoningBuffer.length > 0) {
+          yield reasoningBuffer.join('');
+        }
+        return;
+      }
 
       try {
         const json = JSON.parse(payload);
-        const delta = json.choices?.[0]?.delta?.content;
-        if (delta) yield delta;
+        const choice = json.choices?.[0]?.delta;
+        if (choice?.content) {
+          yieldedContent = true;
+          yield choice.content;
+        } else if (choice?.reasoning_content) {
+          reasoningBuffer.push(choice.reasoning_content);
+        }
       } catch {
         // skip malformed lines
       }
