@@ -8,7 +8,7 @@ interface SearchInputProps {
   domain: string;
   onDomainChange: (v: string) => void;
   format: string;
-  onFormatChange: (v: 'claude' | 'markdown') => void;
+  onFormatChange: (v: 'claude' | 'openclaw' | 'markdown') => void;
   depth: string;
   onDepthChange: (v: 'quick' | 'deep') => void;
   searchEnabled: boolean;
@@ -141,6 +141,14 @@ export function SearchInput({
                   }`}
                 >
                   <span className="hidden sm:inline">Claude Code</span><span className="sm:hidden">Skill</span>
+                </button>
+                <button
+                  onClick={() => onFormatChange('openclaw')}
+                  className={`px-2 sm:px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded transition-colors ${
+                    format === 'openclaw' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  <span className="hidden sm:inline">OpenCLAW</span><span className="sm:hidden">包</span>
                 </button>
                 <button
                   onClick={() => onFormatChange('markdown')}

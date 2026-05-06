@@ -40,7 +40,7 @@ function computeKeywordOverlap(domain1: string, domain2: string): number {
 
 export default function Home() {
   const [domain, setDomain] = useState('');
-  const [format, setFormat] = useState<'claude' | 'markdown'>('claude');
+  const [format, setFormat] = useState<'claude' | 'openclaw' | 'markdown'>('claude');
   const [depth, setDepth] = useState<'quick' | 'deep'>('quick');
   const [searchEnabled, setSearchEnabled] = useState(true);
   const [engine, setEngine] = useState(DEFAULT_MODEL.engine);

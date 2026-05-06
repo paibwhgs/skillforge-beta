@@ -1,0 +1,8 @@
+Task: Add typecheck script to package.json
+Date: 2026-05-06
+Result: PASS
+
+- tsconfig.typecheck.json: exists (extends tsconfig.json, excludes .next/ paths)
+- package.json: "typecheck" script present
+- npm run typecheck: exit 0 (no errors)
+- .next/types/: exists (routes.d.ts, validator.ts, cache-life.d.ts)
