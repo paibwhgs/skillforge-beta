@@ -41,6 +41,7 @@ export function SearchInput({
     { label: string; engine: string; model: string }[]
   >([]);
   const [validationError, setValidationError] = useState('');
+  const [planEnabled, setPlanEnabled] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -134,6 +135,21 @@ export function SearchInput({
     const err = validateInput(domain);
     if (err) { setValidationError(err); return; }
     setValidationError('');
+
+    // If planning is enabled, route to plan page first
+    if (planEnabled) {
+      const params = new URLSearchParams({
+        domain: domain.trim(),
+        format,
+        depth,
+        mode: searchEnabled ? 'auto' : 'direct',
+        engine,
+        model,
+      });
+      router.push(`/plan?${params.toString()}`);
+      return;
+    }
+
     const mode = searchEnabled ? 'auto' : 'direct';
 
     // Store documents in localStorage for workspace page
@@ -406,6 +422,18 @@ export function SearchInput({
             {!searchEnabled && (
               <span className="text-[10px] text-zinc-600">由 AI 直接生成</span>
             )}
+            <button
+              onClick={() => setPlanEnabled(!planEnabled)}
+              className={`px-2.5 py-2.5 rounded-lg text-[10px] font-bold transition-all active:scale-95 flex items-center gap-1 border ${
+                planEnabled
+                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                  : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-600 hover:text-zinc-300'
+              }`}
+              title={planEnabled ? '跳过规划直接生成' : '先进行需求规划再生成'}
+            >
+              <span className="material-symbols-outlined text-sm">psychology</span>
+              <span className="hidden sm:inline">规划</span>
+            </button>
             <button
               onClick={() => {
                 if (!multiModel) {

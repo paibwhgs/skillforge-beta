@@ -81,6 +81,24 @@ function WorkspaceContent() {
   const [progress, setProgress] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
 
+  // Read plan from localStorage (set by /plan page)
+  const [planContext, setPlanContext] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('skillforge-plan');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.domain === domain && parsed.plan) {
+          setPlanContext(parsed.plan);
+        }
+        localStorage.removeItem('skillforge-plan');
+      }
+    } catch {
+      // ignore
+    }
+  }, [domain]);
+
   // --- Multi-model state ---
   const [modelOutputs, setModelOutputs] = useState<ModelOutput[]>([]);
   const [activeModelIdx, setActiveModelIdx] = useState(0);
@@ -136,6 +154,7 @@ function WorkspaceContent() {
           body: JSON.stringify({
             domain, format, depth, mode, engine, model,
             documents: docsToSend.length > 0 ? docsToSend : undefined,
+            plan: planContext || undefined,
           }),
           signal: abortController.signal,
         });

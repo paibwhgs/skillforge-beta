@@ -24,6 +24,7 @@ export interface GenerateRequest {
   engine?: string;
   model?: string;
   documents?: UploadedDocument[];
+  plan?: string;
 }
 
 export interface GenerateResponse {

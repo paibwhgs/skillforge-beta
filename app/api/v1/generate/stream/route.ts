@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
   const engine = body.engine;
   const model = body.model;
   const documents = body.documents;
+  const plan = body.plan;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -82,15 +83,21 @@ export async function POST(request: NextRequest) {
         // Phase 2: Curate (streaming)
         write('log', { type: 'curating', text: 'AI 正在策展提炼...', ts: now() });
 
+        // Merge plan into documents if present
+        const allDocs = documents || [];
+        if (plan) {
+          allDocs.push({ name: '规划方案.md', content: plan, type: 'text/markdown' });
+        }
+
         let rawContent = '';
         let tokenCount = 0;
         if (mode === 'auto' && level === 'none') {
           const { curate } = await import('@/lib/curator');
-          rawContent = await curate(domain, results, level, format, engine, model, documents);
+          rawContent = await curate(domain, results, level, format, engine, model, allDocs);
           write('token', { text: rawContent });
           console.error(`[stream] fallback seed, rawContent length=${rawContent.length}`);
         } else {
-          for await (const token of curateStream(domain, results, level, format, engine, model, documents)) {
+          for await (const token of curateStream(domain, results, level, format, engine, model, allDocs)) {
             rawContent += token;
             tokenCount++;
             write('token', { text: token });
