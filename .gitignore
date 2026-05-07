@@ -54,3 +54,5 @@ next-env.d.ts
 
 .vercel
 screenshots/
+build-log.txt
+build-err.txt
