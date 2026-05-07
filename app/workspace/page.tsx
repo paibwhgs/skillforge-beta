@@ -159,7 +159,13 @@ function WorkspaceContent() {
 
                   case 'token':
                     accumulatedContent += data.text;
-                    setContent(accumulatedContent);
+                    // Strip file markers from display (they're handled by 'file'/'done' events)
+                    const displayContent = accumulatedContent
+                      .replace(/<!--\s*file:\s*.+?\s*-->[\s\S]*?<!--\s*endfile\s*-->/g, '')
+                      .replace(/<!--\s*file:\s*.+?\s*-->/g, '')
+                      .replace(/<!--\s*endfile\s*-->/g, '')
+                      .trim();
+                    setContent(displayContent);
                     break;
 
                   case 'source':
@@ -475,7 +481,7 @@ function WorkspaceContent() {
     );
   }
 
-  const fileName = `${domain.replace(/\s+/g, '-').toLowerCase()}.md`;
+  const fileName = currentFiles.length > 0 ? `${domain.replace(/\s+/g, '-').toLowerCase()}/SKILL.md` : `${domain.replace(/\s+/g, '-').toLowerCase()}.md`;
 
   return (
     <div className="min-h-screen bg-theme pt-14 flex flex-col md:flex-row">
