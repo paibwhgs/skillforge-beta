@@ -222,7 +222,7 @@ export default function DocsPage() {
                       同时调用多个搜索引擎并行检索，获取互联网最新技术资料。
                     </p>
                     <div className="text-[10px] text-zinc-600 font-mono bg-zinc-950 rounded px-2 py-1">
-                      Promise.all([tavily, dashscope])
+                      Promise.all([engine1, engine2])
                     </div>
                   </div>
                   <div className="bg-zinc-900/30 border border-zinc-900 rounded-lg p-5">
@@ -243,7 +243,7 @@ export default function DocsPage() {
                     </div>
                     <h4 className="text-white text-sm font-bold mb-1">3. 生成</h4>
                     <p className="text-zinc-500 text-xs leading-relaxed mb-3">
-                      格式化输出标准 Skill 文件（YAML frontmatter + Markdown），持久化到 Turso 数据库。
+                      格式化输出标准 Skill 文件（YAML frontmatter + Markdown），持久化到数据库。
                     </p>
                     <div className="text-[10px] text-zinc-600 font-mono bg-zinc-950 rounded px-2 py-1">
                       format + insert + source
@@ -265,7 +265,7 @@ export default function DocsPage() {
                   {
                     icon: 'search',
                     title: '自动模式',
-                    desc: '默认选项。先通过 Tavily + DashScope 双引擎搜索网络获取最新资料，再经 AI 策展合成。结果质量最高，适合大多数场景。',
+                    desc: '默认选项。先通过网络搜索获取最新资料，再经 AI 策展合成。结果质量最高，适合大多数场景。',
                     tag: '推荐',
                     tagColor: '#FF5C00',
                   },
@@ -474,7 +474,7 @@ export default function DocsPage() {
                   question="为什么有时搜索不到结果？"
                   answer={
                     <>
-                      可能的原因：① 领域过于冷门或生僻；② Tavily 或 DashScope API 额度耗尽；③ 网络问题。
+                      可能的原因：① 领域过于冷门或生僻；② 搜索 API 额度耗尽；③ 网络问题。
                       此时会自动进入稀疏策展模式（AI 补充）或回退到种子库。建议尝试 AI 直出模式或换用更常见的描述。
                     </>
                   }
