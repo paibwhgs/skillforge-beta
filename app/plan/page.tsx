@@ -130,9 +130,18 @@ function PlanContent() {
         {step === 'plan' && (
           <div className="animate-fadeIn">
             <h1 className="font-display text-2xl text-white font-bold mb-1">规划方案</h1>
-            <p className="text-zinc-400 text-sm mb-6">确认方案后开始铸造。</p>
-            <div className="bg-[#080808] border border-zinc-900 rounded-xl p-6 mb-8">
-              <pre className="text-sm text-zinc-300 leading-relaxed whitespace-pre-wrap font-body">{plan}</pre>
+            <p className="text-zinc-400 text-sm mb-4">确认方案后开始铸造，也可以直接编辑修改。</p>
+            <div className="bg-[#080808] border border-zinc-900 rounded-xl mb-8">
+              <div className="flex items-center justify-between px-5 py-2 border-b border-zinc-900">
+                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">规划方案（可编辑）</span>
+                <button onClick={() => setPlan(plan + '\n')} className="text-zinc-500 hover:text-zinc-300 transition text-xs">插入换行</button>
+              </div>
+              <textarea
+                value={plan}
+                onChange={(e) => setPlan(e.target.value)}
+                className="w-full bg-transparent border-none focus:outline-none text-sm text-zinc-300 leading-relaxed placeholder-zinc-700 resize-y min-h-[200px] font-body p-5"
+                rows={12}
+              />
             </div>
             <div className="flex items-center justify-between">
               <button onClick={() => setStep('questions')} className="text-sm text-zinc-500 hover:text-zinc-300 transition flex items-center gap-1">
