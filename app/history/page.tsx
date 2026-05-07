@@ -29,6 +29,8 @@ export default function HistoryPage() {
   const [collectionFilter, setCollectionFilter] = useState<string>('all');
   const [newCollectionName, setNewCollectionName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; title: string } | null>(null);
+  const [deleteCollectionConfirm, setDeleteCollectionConfirm] = useState<string | null>(null);
   const perPage = 6;
 
   const toggleBookmark = async (id: string, current: number) => {
@@ -152,7 +154,14 @@ export default function HistoryPage() {
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm('确定要删除这条 skill 吗？')) return;
+    const skill = skills.find((s) => s.id === id);
+    if (skill) setDeleteConfirm({ id, title: skill.title });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    const { id } = deleteConfirm;
+    setDeleteConfirm(null);
     const removed = skills.find((s) => s.id === id);
     setSkills((prev) => prev.filter((s) => s.id !== id)); // optimistic
     try {
@@ -161,6 +170,21 @@ export default function HistoryPage() {
     } catch {
       if (removed) setSkills((prev) => [...prev, removed]); // revert
       alert('删除失败，请重试');
+    }
+  };
+
+  const confirmDeleteCollection = async () => {
+    if (!deleteCollectionConfirm) return;
+    const id = deleteCollectionConfirm;
+    setDeleteCollectionConfirm(null);
+    try {
+      const res = await fetch(`/api/v1/collections/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setCollections((prev) => prev.filter((x) => x.id !== id));
+        if (collectionFilter === id) setCollectionFilter('all');
+      }
+    } catch {
+      // ignore
     }
   };
 
@@ -468,18 +492,7 @@ export default function HistoryPage() {
                             <span className="text-[10px] text-zinc-600">{c.skill_count}</span>
                           </div>
                           <button
-                            onClick={async () => {
-                              if (!confirm(`确定删除收藏夹「${c.name}」？`)) return;
-                              try {
-                                const res = await fetch(`/api/v1/collections/${c.id}`, { method: 'DELETE' });
-                                if (res.ok) {
-                                  setCollections((prev) => prev.filter((x) => x.id !== c.id));
-                                  if (collectionFilter === c.id) setCollectionFilter('all');
-                                }
-                              } catch {
-                                // ignore
-                              }
-                            }}
+                            onClick={() => setDeleteCollectionConfirm(c.id)}
                             className="material-symbols-outlined text-zinc-600 hover:text-red-400 transition-colors text-sm"
                             title="删除"
                           >
@@ -559,6 +572,40 @@ export default function HistoryPage() {
           </>
         )}
       </div>
+
+      {/* Delete Skill Confirm Modal */}
+      {deleteConfirm && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/60" onClick={() => setDeleteConfirm(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className="pointer-events-auto bg-zinc-900 border border-zinc-700 rounded-xl p-5 shadow-2xl w-80" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-white font-bold text-sm mb-2">删除 Skill</h3>
+              <p className="text-zinc-400 text-xs mb-5">确定要删除「{deleteConfirm.title}」吗？此操作不可撤销。</p>
+              <div className="flex gap-3 justify-end">
+                <button onClick={() => setDeleteConfirm(null)} className="px-4 py-2 rounded-lg text-xs font-bold text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 transition">取消</button>
+                <button onClick={confirmDelete} className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-500 transition">删除</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Delete Collection Confirm Modal */}
+      {deleteCollectionConfirm && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/60" onClick={() => setDeleteCollectionConfirm(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className="pointer-events-auto bg-zinc-900 border border-zinc-700 rounded-xl p-5 shadow-2xl w-80" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-white font-bold text-sm mb-2">删除收藏夹</h3>
+              <p className="text-zinc-400 text-xs mb-5">确定要删除此收藏夹吗？此操作不可撤销。</p>
+              <div className="flex gap-3 justify-end">
+                <button onClick={() => setDeleteCollectionConfirm(null)} className="px-4 py-2 rounded-lg text-xs font-bold text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 transition">取消</button>
+                <button onClick={confirmDeleteCollection} className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-500 transition">删除</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
