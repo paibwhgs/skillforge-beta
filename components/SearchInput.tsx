@@ -290,9 +290,6 @@ export function SearchInput({
                 AI 直出
               </button>
             </div>
-            <span className="text-[10px] font-label text-zinc-600 hidden sm:block">
-              Tavily + Dashscope
-            </span>
           </div>
 
           <div className="flex items-center gap-4">
