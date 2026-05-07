@@ -98,7 +98,7 @@ const CURATION_SYSTEM_OPENCLAW = CURATION_SYSTEM;
 function buildDocumentsBlock(documents: UploadedDocument[]): string {
   if (!documents || documents.length === 0) return '';
   const docsBlock = documents
-    .map((doc) => `[Document: ${doc.name}]\n${doc.content.slice(0, 2000)}`)
+    .map((doc) => `[Document: ${doc.name}]\n${doc.content.slice(0, 8000)}`)
     .join('\n\n');
   return `\n\n## User Documents\nThe user has provided the following documents for context:\n\n${docsBlock}`;
 }
