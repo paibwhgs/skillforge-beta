@@ -183,10 +183,10 @@ export default function DocsPage() {
                 <ol className="space-y-5">
                   {[
                     ['在首页输入技术领域关键词', '例如 "React 性能优化"、"Go 微服务架构"，越具体越好。'],
-                    ['选择生成模式', '自动搜索（联网策展）、AI 直出（纯 LLM 生成）、深度搜索（更多来源）三种模式可选。'],
+                    ['选择生成模式', '自动搜索（联网策展）、AI 直出（纯 LLM 生成）、深度搜索（更多来源）等多种模式可选。'],
+                    ['（可选）上传参考文档', '支持拖拽上传 .md、.txt、.pdf 文件作为补充上下文，AI 会结合文档内容生成更精准的 Skill。'],
                     ['点击生成，等待策展完成', '系统会并行搜索、AI 策展、格式化输出，通常 10-30 秒完成。'],
-                    ['预览、编辑生成的 Skill 内容', '生成后可在工作区查看完整内容，支持在线编辑和 AI 对话修改。'],
-                    ['将 skill 放入项目目录', '下载 .md 文件放入项目的 <code>.claude/skills/</code> 目录，Claude Code 会自动识别加载。'],
+                    ['预览、编辑、下载', '生成后在工作区查看 SKILL.md 内容，附属文件（代码示例、脚本等）会自动打包，支持 ZIP 下载。'],
                   ].map(([step, detail], i) => (
                     <li key={i} className="flex gap-4">
                       <span className="w-7 h-7 rounded-full bg-[#FF5C00]/10 border border-[#FF5C00]/20 text-[#FF5C00] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
@@ -194,7 +194,7 @@ export default function DocsPage() {
                       </span>
                       <div>
                         <h4 className="text-white text-sm font-bold mb-0.5">{step}</h4>
-                        <p className="text-zinc-500 text-xs leading-relaxed" dangerouslySetInnerHTML={{ __html: detail }} />
+                        <p className="text-zinc-500 text-xs leading-relaxed">{detail}</p>
                       </div>
                     </li>
                   ))}
@@ -292,10 +292,10 @@ export default function DocsPage() {
                   },
                   {
                     icon: 'edit_note',
-                    title: '自定义 Prompt',
-                    desc: '在工作区设置页面可自定义系统提示词，精细化控制 AI 策展的方向和风格。',
-                    tag: '高级',
-                    tagColor: '#f59e0b',
+                    title: '文档上传',
+                    desc: '上传 .md、.txt、.pdf 文件作为补充上下文，AI 会结合文档内容生成更精准的 Skill 文件。',
+                    tag: '新增',
+                    tagColor: '#22c55e',
                   },
                 ].map((mode) => (
                   <div
@@ -342,15 +342,35 @@ export default function DocsPage() {
               <SectionHeading icon="file_copy">输出格式</SectionHeading>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormatCard icon="description" title="Skill 格式（默认）">
-                  带 YAML frontmatter 的标准 skill 文件，遵循 AGENTS.md 规范。可放入{' '}
+                  带 YAML frontmatter 的标准 skill 文件，遵循 Anthropic 官方规范。可放入{' '}
                   <code className="text-zinc-500 bg-zinc-900 px-1 rounded text-[10px]">.claude/skills/</code> 目录被 Claude Code 自动识别加载。
                 </FormatCard>
                 <FormatCard icon="markdown" title="Markdown" accent="#3b82f6">
                   纯 Markdown 格式，通用性强。不包含 frontmatter，可导入任何支持 Markdown 的工具、平台或文档系统。
                 </FormatCard>
                 <FormatCard icon="inventory_2" title="OpenCLAW 格式" accent="#8b5cf6">
-                   与 Markdown 格式相同，但文件命名和元数据按 OpenCLAW 规范组织，兼容 OpenCLAW 工具链。输出为单文件 Markdown。
+                    与 Markdown 格式相同，但文件命名和元数据按 OpenCLAW 规范组织，兼容 OpenCLAW 工具链。输出为单文件 Markdown。
                  </FormatCard>
+              </div>
+              <div className="mt-4 bg-[#080808] border border-zinc-900 rounded-xl p-5">
+                <h3 className="text-white text-sm font-bold mb-2 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[#FF5C00] text-sm">folder</span>
+                  技能目录结构
+                </h3>
+                <p className="text-zinc-400 text-xs leading-relaxed mb-3">
+                  SKILL.md 是核心文件，限制 150 行以内，专注触发条件和核心规则。代码示例、工具对比等详细内容会自动分包到附属文件中。生成后可下载 ZIP 包，目录结构如下：
+                </p>
+                <div className="bg-zinc-950 rounded-lg border border-zinc-900 p-4">
+                  <pre className="text-[11px] font-mono text-zinc-400 whitespace-pre-wrap">
+{`skill-name/
+├── SKILL.md            ← 核心文件（必须）
+├── references/         ← 参考文档、代码示例（可选）
+│   ├── examples.md
+│   └── tools.md
+├── scripts/            ← 可执行脚本（可选）
+└── assets/             ← 配置文件模板（可选）`}
+                  </pre>
+                </div>
               </div>
             </section>
 
