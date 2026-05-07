@@ -431,6 +431,14 @@ export function SearchInput({
               <span className="material-symbols-outlined text-sm">psychology</span>
               <span className="hidden sm:inline">规划</span>
             </button>
+            <a
+              href="/fix"
+              className="px-2.5 py-2.5 rounded-lg text-[10px] font-bold transition-all active:scale-95 flex items-center gap-1 border bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-600 hover:text-zinc-300"
+              title="优化已有 Skill"
+            >
+              <span className="material-symbols-outlined text-sm">tune</span>
+              <span className="hidden sm:inline">优化</span>
+            </a>
             <button
               onClick={() => {
                 if (!multiModel) {
