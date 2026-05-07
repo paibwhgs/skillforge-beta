@@ -13,23 +13,32 @@ const CURATION_SYSTEM = `You are an AI Skill curator. Your job is to synthesize 
 4. **Be honest about gaps**: If search results lack certain aspects, note it rather than fabricating.
 5. **Be comprehensive**: Use comparison tables, code examples in multiple languages where relevant, and ecosystem/tool recommendations.
 
-## What NOT to do
+## What NOT to do (Principle of Lack of Surprise)
 - Do NOT copy original text passages (copyright risk)
 - Do NOT include advertisements or promotional links
 - Do NOT fabricate citations
 - Skip irrelevant search results silently
 - Do NOT claim knowledge breadth you don't have
-- Do NOT include content that could compromise security or mislead users (Principle of Lack of Surprise)
+- Do NOT include content that could compromise security or mislead users. A skill's content should NOT surprise the user in its intent — no hidden behavior, misleading descriptions, or anything that would be unexpected if described honestly.
 
 ## Writing Style
 - **Explain the why**: Instead of heavy-handed MUSTs and NEVERs, explain the reasoning behind each instruction. LLMs understand theory of mind — when you explain why something matters, the output is more principled and generalizes better.
 - **Use imperative form** for instructions: "Extract patterns" not "You should extract patterns".
 - **Be specific but not narrow**: Give concrete examples, but explain the general principle so the skill works across different contexts.
-- **Progressive disclosure**: The SKILL.md is loaded into context when the skill triggers. Keep it focused and actionable. Additional reference material belongs in sub-sections or external files referenced from the skill.
+- **Progressive disclosure**: The SKILL.md body is loaded into context when the skill triggers. Keep it under 200 lines — focused and actionable. If the domain is deep or spans multiple frameworks, organize the skill with a main body for common cases and reference sub-sections (## References) for deep-dive material. Readers only load what they need.
+
+## Skill directory structure
+A skill may bundle supporting files. Structure:
+- SKILL.md — main file (required, under 200 lines)
+- scripts/ — executable code for repetitive tasks
+- references/ — deep-dive docs loaded on demand
+- assets/ — templates, icons, config files
+
+If the domain spans multiple frameworks/variants (e.g., AWS + GCP + Azure for cloud-deploy), organize references/ as separate files per variant so the reader picks only the relevant one.
 
 ## Required skill structure
 Every generated skill MUST contain:
-1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code). The description should be slightly "pushy" — include both WHAT the skill does AND specific contexts/tell-tale phrases that should trigger it. Example: "Guide for building dashboards. Use this whenever the user mentions dashboards, data visualization, internal metrics, or wants to display company data — even if they don't explicitly ask for a 'dashboard'."
+1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code). The description is the PRIMARY trigger mechanism — include both WHAT the skill does AND specific contexts/tell-tale phrases that should trigger it. Make it slightly "pushy" to avoid undertriggering. Example: "Guide for building dashboards. Use this whenever the user mentions dashboards, data visualization, internal metrics, or wants to display company data — even if they don't explicitly ask for a 'dashboard'."
 2. **When to use**: Specific scenarios and user phrases that trigger this skill
 3. **Core Rules**: Clear, actionable, verifiable instructions. Explain the reasoning behind each rule.
 4. **Tool & Ecosystem Guide**: Recommended libraries, frameworks, tools with brief comparisons (use tables when comparing 3+ options)
@@ -39,7 +48,7 @@ Every generated skill MUST contain:
 ## Output format
 ---
 name: skill-name-here
-description: "One-line description of what this skill does and when to use it"
+description: "One-line description of what this skill does and when to trigger it"
 ---
 
 # Skill Title
@@ -49,8 +58,8 @@ description: "One-line description of what this skill does and when to use it"
 - Scenario 2
 
 ## Core Rules
-1. Rule with clear action
-2. Rule with clear action
+1. Rule with clear action — explain WHY this matters
+2. Rule with clear action — explain WHY this matters
 
 ## Tool & Ecosystem Guide
 | Tool | Purpose | Best for | Notes |
@@ -68,7 +77,10 @@ description: "One-line description of what this skill does and when to use it"
 ## Common Pitfalls & Boundaries
 - Don't do X
 - Stop when Y
-- Escalate Z cases`;
+
+## References (if the domain is broad)
+- Framework A guide → see references/framework-a.md
+- Advanced patterns → see references/advanced.md`;
 
 const CURATION_SYSTEM_OPENCLAW = CURATION_SYSTEM;
 
@@ -97,24 +109,29 @@ const DIRECT_SYSTEM = `You are an AI Skill author. Your job is to generate a hig
 3. **Acknowledge limitations**: You are generating from existing knowledge, not live research. If you're uncertain about something, state it clearly.
 4. **Be comprehensive**: Use comparison tables, code examples in multiple languages where relevant, and ecosystem/tool recommendations.
 
+## What NOT to do (Principle of Lack of Surprise)
+- Do NOT include content that could compromise security or mislead users. A skill's content should NOT surprise the user in its intent.
+- Do NOT claim knowledge breadth you don't have
+- Do NOT fabricate citations or references
+
 ## Writing Style
 - **Explain the why**: Instead of heavy-handed MUSTs and NEVERs, explain the reasoning behind each instruction. LLMs understand theory of mind — when you explain why something matters, the output is more principled and generalizes better.
-- **Use imperative form** for instructions.
-- **Progressive disclosure**: Keep the skill focused and actionable. Reference external documents for deep-dive material rather than bloating the main skill body.
+- **Use imperative form** for instructions: "Extract patterns" not "You should extract patterns".
+- **Progressive disclosure**: Keep the skill body under 200 lines. Use sub-sections or reference files for deep-dive material.
 
 ## Required skill structure
 Every generated skill MUST contain:
-1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code). The description should be slightly "pushy" — include both WHAT the skill does AND specific contexts/tell-tale phrases that should trigger it.
+1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code). The description is the PRIMARY trigger mechanism — include both WHAT the skill does AND specific contexts/tell-tale phrases that should trigger it. Make it slightly "pushy" to avoid undertriggering.
 2. **When to use**: Specific scenarios and user phrases that trigger this skill
 3. **Core Rules**: Clear, actionable, verifiable instructions. Explain the reasoning behind each rule.
 4. **Tool & Ecosystem Guide**: Recommended libraries, frameworks, tools with brief comparisons (use tables when comparing 3+ options)
-5. **Code Examples**: At least 2-3 concrete before/after or pattern examples, with code blocks
+5. **Code Examples**: At least 2-3 concrete before/after or pattern examples, with code blocks. Use "Input → Output" format where applicable.
 6. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns
 
 ## Output format
 ---
 name: skill-name-here
-description: "One-line description of what this skill does and when to use it"
+description: "One-line description of what this skill does and when to trigger it"
 ---
 
 # Skill Title
@@ -124,8 +141,8 @@ description: "One-line description of what this skill does and when to use it"
 - Scenario 2
 
 ## Core Rules
-1. Rule with clear action
-2. Rule with clear action
+1. Rule with clear action — explain WHY this matters
+2. Rule with clear action — explain WHY this matters
 
 ## Tool & Ecosystem Guide
 | Tool | Purpose | Best for | Notes |
@@ -143,11 +160,36 @@ description: "One-line description of what this skill does and when to use it"
 ## Common Pitfalls & Boundaries
 - Don't do X
 - Stop when Y
-- Escalate Z cases
 
 **Note**: This skill was generated from AI knowledge without web search. For the most up-to-date information, consider enabling web search.`;
 
 const DIRECT_SYSTEM_OPENCLAW = DIRECT_SYSTEM;
+
+const VALIDATION_PROMPT = `You are a input validator. Determine if the given text describes a meaningful technical domain, skill, or field of knowledge that an AI skill file could be created for.
+
+Return ONLY a JSON object:
+- {"valid": true} — if the input describes a real technology, framework, programming concept, technical workflow, or development practice
+- {"valid": false, "reason": "..."} — if the input is gibberish, spam, random characters, non-technical chatter, or doesn't describe any identifiable technical domain
+
+Examples of VALID input: "React performance optimization", "Go microservices", "Python data science", "PostgreSQL indexing", "Docker CI/CD", "Machine learning with TensorFlow"
+Examples of INVALID input: "haha", "asdf", "12345", "hello world", "what is life", "aaaaa", "test"`;
+
+export async function validateDomain(domain: string): Promise<{ valid: boolean; reason?: string }> {
+  try {
+    const text = await chatOpenCodeGo({
+      system: VALIDATION_PROMPT,
+      user: `Validate this input: "${domain}"`,
+      model: 'deepseek-v4-flash',
+      temperature: 0.1,
+      maxTokens: 100,
+    });
+    const cleaned = text.trim().replace(/```json\s*|```/g, '');
+    return JSON.parse(cleaned);
+  } catch {
+    // If validation fails, allow the request to proceed
+    return { valid: true };
+  }
+}
 
 // LLM routing helpers with cross-backend fallback
 // Tries the configured engine first; if it fails, automatically falls back to the other.
@@ -157,12 +199,12 @@ async function callLLM(
   temperature = 0.7,
 ): Promise<string> {
   const first = engine === 'opencode-go'
-    ? () => chatOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature })
+    ? () => chatOpenCodeGo({ system, user, model: model || 'deepseek-v4-flash', temperature })
     : () => chat({ system, user, model, temperature });
 
   const second = engine === 'opencode-go'
     ? () => chat({ system, user, model, temperature })
-    : () => chatOpenCodeGo({ system, user, model: model || (DEFAULT_MODEL as any).model || 'qwen3.6-plus', temperature });
+    : () => chatOpenCodeGo({ system, user, model: model || 'deepseek-v4-flash', temperature });
 
   try {
     return await first();
@@ -186,7 +228,7 @@ async function* callLLMStream(
     let content = '';
     let streamOk = false;
     try {
-      for await (const token of chatStreamOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature })) {
+      for await (const token of chatStreamOpenCodeGo({ system, user, model: model || 'deepseek-v4-flash', temperature })) {
         content += token;
         streamOk = true;
         yield token;
@@ -223,7 +265,7 @@ async function* callLLMStream(
   if (!streamOk || !content.trim()) {
     console.error(`[curator] DeepSeek returned empty, falling back to OpenCodeGo`);
     try {
-      const text = await chatOpenCodeGo({ system, user, model: model || 'qwen3.6-plus', temperature });
+      const text = await chatOpenCodeGo({ system, user, model: model || 'deepseek-v4-flash', temperature });
       if (text.trim()) yield text;
     } catch (err2: any) {
       throw new Error(`All LLM backends failed. DeepSeek: empty content | OpenCodeGo: ${err2.message}`);
@@ -330,7 +372,7 @@ Search results were sparse. Supplement with general AI knowledge for this domain
   yield fallbackSeed(domain);
 }
 
-function fallbackSeed(domain: string): string {
+export function fallbackSeed(domain: string): string {
   const keywords = domain.toLowerCase();
   let bestMatch = seeds.general; // default
 

@@ -131,7 +131,7 @@ export default function SkillDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-theme">
       {/* Loading */}
       {loading && (
         <div className="max-w-5xl mx-auto px-6 pt-20 animate-fadeIn space-y-6">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SkillRecord, Collection } from '@/types';
 
@@ -13,26 +13,6 @@ interface Props {
 export function SkillCard({ skill, variant = 'default', onDelete }: Props) {
   const router = useRouter();
   const navigate = () => router.push(`/skills/${skill.id}`);
-  const [bookmarked, setBookmarked] = useState(skill.bookmarked === 1);
-
-  useEffect(() => {
-    setBookmarked(skill.bookmarked === 1);
-  }, [skill.bookmarked]);
-
-  const toggleBookmark = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const next = !bookmarked;
-    setBookmarked(next); // optimistic
-    try {
-      await fetch(`/api/v1/skills/${skill.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookmarked: next ? 1 : 0 }),
-      });
-    } catch {
-      setBookmarked(!next); // revert on failure
-    }
-  };
 
   // ── Collection picker ──────────────────────────────────────
   const [showCollectionPicker, setShowCollectionPicker] = useState(false);
@@ -182,12 +162,12 @@ export function SkillCard({ skill, variant = 'default', onDelete }: Props) {
         <div className="absolute -bottom-6 -right-6 opacity-[0.12] group-hover:opacity-[0.18] transition-opacity">
           <span className={`material-symbols-outlined text-7xl ${theme.iconColor}`}>{theme.icon}</span>
         </div>
-        <div className="absolute top-4 left-4 flex gap-2">
+        <div className="absolute top-4 left-4 flex items-center gap-2">
           <span className="bg-black/50 backdrop-blur-sm border border-white/10 text-white font-label text-[10px] px-2 py-0.5 rounded flex items-center gap-1">
             <span className={`material-symbols-outlined text-[10px] ${theme.iconColor}`}>{theme.icon}</span>
             {skill.mode === 'direct' ? 'AI 直出' : '搜索策划'}
           </span>
-          <span className="bg-black/50 backdrop-blur-sm border border-white/10 text-zinc-300 font-label text-[10px] px-2 py-0.5 rounded">
+          <span className="bg-black/50 backdrop-blur-sm border border-white/10 text-zinc-300 font-label text-[10px] px-2 py-0.5 rounded flex items-center">
             {skill.format === 'claude' ? 'Claude Code' : skill.format === 'openclaw' ? 'OpenCLAW' : 'Markdown'}
           </span>
           {skill.score > 0 && (
@@ -219,21 +199,14 @@ export function SkillCard({ skill, variant = 'default', onDelete }: Props) {
         <div className="flex items-center justify-between pt-3 border-t border-zinc-900">
           <div className="flex items-center gap-1">
             <button
-              onClick={toggleBookmark}
+              onClick={(e) => { e.stopPropagation(); setShowCollectionPicker(true); loadCollections(); }}
               className={`material-symbols-outlined transition-all text-lg ${
-                bookmarked ? 'text-[#FF5C00] scale-110' : 'text-zinc-600 hover:text-zinc-400 hover:scale-110'
+                collections.some((c) => c.skill_ids.includes(skill.id)) ? 'text-[#FF5C00] scale-110' : 'text-zinc-600 hover:text-zinc-400 hover:scale-110'
               }`}
-              style={{ fontVariationSettings: bookmarked ? "'FILL' 1" : "'FILL' 0" }}
-              title={bookmarked ? '取消收藏' : '收藏'}
+              style={{ fontVariationSettings: collections.some((c) => c.skill_ids.includes(skill.id)) ? "'FILL' 1" : "'FILL' 0" }}
+              title="收藏到收藏夹"
             >
               bookmark
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowCollectionPicker(true); loadCollections(); }}
-              className="material-symbols-outlined text-zinc-600 hover:text-zinc-400 transition-all text-lg"
-              title="收藏夹"
-            >
-              playlist_add
             </button>
             {onDelete && (
               <button

@@ -36,9 +36,31 @@ export function SearchInput({
   const [selectedModels, setSelectedModels] = useState<
     { label: string; engine: string; model: string }[]
   >([]);
+  const [validationError, setValidationError] = useState('');
+
+  function validateInput(input: string): string {
+    const trimmed = input.trim();
+    if (trimmed.length < 3) return '至少输入 3 个字符来描述一个技术领域';
+
+    // Check for repeated characters (aaaa, 111, 哈哈哈...)
+    const charCounts: Record<string, number> = {};
+    for (const ch of trimmed) {
+      charCounts[ch] = (charCounts[ch] || 0) + 1;
+    }
+    const maxRepeat = Math.max(...Object.values(charCounts));
+    if (maxRepeat / trimmed.length > 0.7) return '输入看起来不太对，试试描述一个技术领域（如 "React 性能优化"）';
+
+    // Check for meaningful content ratio
+    const meaningful = trimmed.replace(/[\s,，。、！？!?;；：:·\.\-_#@$%^&*()（）+=\[\]{}|\\\/'"「」【】《》<>~`…\d]/g, '');
+    if (meaningful.length / trimmed.length < 0.3) return '输入包含太多特殊字符，请描述一个具体的技术领域';
+
+    return '';
+  }
 
   const handleGenerate = () => {
-    if (!domain.trim()) return;
+    const err = validateInput(domain);
+    if (err) { setValidationError(err); return; }
+    setValidationError('');
     const mode = searchEnabled ? 'auto' : 'direct';
 
     if (multiModel && selectedModels.length >= 2) {
@@ -70,16 +92,24 @@ export function SearchInput({
         {/* Input Area */}
         <div className="flex items-start px-4 py-4 border-b border-zinc-900/50 gap-3">
           <span className="material-symbols-outlined text-zinc-500 mt-2.5 shrink-0">terminal</span>
-          <textarea
-            value={domain}
-            onChange={(e) => onDomainChange(e.target.value)}
-            placeholder="输入一个领域（例如：Go 后端开发）"
-            rows={3}
-            className="flex-1 bg-transparent border-none focus:outline-none text-white font-mono text-sm placeholder:text-zinc-700 resize-none"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && e.metaKey) handleGenerate();
-            }}
-          />
+          <div className="flex-1">
+            <textarea
+              value={domain}
+              onChange={(e) => { onDomainChange(e.target.value); if (validationError) setValidationError(''); }}
+              placeholder="输入一个领域（例如：Go 后端开发）"
+              rows={3}
+              className="w-full bg-transparent border-none focus:outline-none text-white font-mono text-sm placeholder:text-zinc-700 resize-none"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.metaKey) handleGenerate();
+              }}
+            />
+            {validationError && (
+              <div className="flex items-center gap-1.5 mt-1 text-amber-400 text-[10px]">
+                <span className="material-symbols-outlined text-xs">error_outline</span>
+                <span>{validationError}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Controls Row */}
@@ -148,7 +178,7 @@ export function SearchInput({
                     format === 'openclaw' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
-                  <span className="hidden sm:inline">OpenCLAW</span><span className="sm:hidden">包</span>
+                  OpenCLAW
                 </button>
                 <button
                   onClick={() => onFormatChange('markdown')}

@@ -478,7 +478,7 @@ function WorkspaceContent() {
   const fileName = `${domain.replace(/\s+/g, '-').toLowerCase()}.md`;
 
   return (
-    <div className="min-h-screen bg-black pt-14 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-theme pt-14 flex flex-col md:flex-row">
       {/* Left Sidebar: Model Tabs (multi-model) + Generation Log */}
       <aside className="w-full md:w-96 border-r border-zinc-900 bg-zinc-950 flex flex-col shrink-0">
         {/* Model Tabs (multi-model) */}
@@ -788,7 +788,7 @@ export default function WorkspacePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-black flex items-center justify-center pt-14">
+    <div className="min-h-screen bg-theme flex items-center justify-center pt-14">
           <div className="text-center">
             <span className="material-symbols-outlined text-5xl text-zinc-800 mb-4">
               hourglass_empty

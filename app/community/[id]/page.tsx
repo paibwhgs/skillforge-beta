@@ -27,6 +27,7 @@ export default function PostDetailPage() {
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const fetchPost = async () => {
     try {
@@ -80,12 +81,13 @@ export default function PostDetailPage() {
   };
 
   const handleDeletePost = async () => {
-    if (!confirm('确定删除此帖子？')) return;
     try {
       const res = await fetch(`/api/v1/community/${params.id}`, { method: 'DELETE' });
       if (res.ok) router.push('/community');
     } catch {
       // ignore
+    } finally {
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -144,12 +146,39 @@ export default function PostDetailPage() {
               <span className="text-[10px] text-zinc-600">{timeAgo(post.created_at)}</span>
             </div>
             {user && user.id === post.user_id && (
+              <>
               <button
-                onClick={handleDeletePost}
+                onClick={() => setShowDeleteConfirm(true)}
                 className="ml-auto text-zinc-600 hover:text-red-400 transition text-sm"
               >
                 <span className="material-symbols-outlined text-lg">delete</span>
               </button>
+              {showDeleteConfirm && (
+                <>
+                  <div className="fixed inset-0 z-50 bg-black/60" onClick={() => setShowDeleteConfirm(false)} />
+                  <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+                    <div className="pointer-events-auto bg-zinc-900 border border-zinc-700 rounded-xl p-5 shadow-2xl w-80" onClick={(e) => e.stopPropagation()}>
+                      <h3 className="text-white font-bold text-sm mb-2">删除帖子</h3>
+                      <p className="text-zinc-400 text-xs mb-5">确定要删除此帖子吗？此操作不可撤销。</p>
+                      <div className="flex gap-3 justify-end">
+                        <button
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className="px-4 py-2 rounded-lg text-xs font-bold text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 transition"
+                        >
+                          取消
+                        </button>
+                        <button
+                          onClick={handleDeletePost}
+                          className="px-4 py-2 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-500 transition"
+                        >
+                          删除
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+              </>
             )}
           </div>
 

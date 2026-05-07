@@ -1,33 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
-import { SkillCard } from '@/components/SkillCard';
-import type { SkillRecord } from '@/types';
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
-  const [skills, setSkills] = useState<SkillRecord[]>([]);
-  const [skillsLoading, setSkillsLoading] = useState(true);
 
   useEffect(() => {
     if (loading) return;
     if (!user) {
       router.push('/login');
-      return;
     }
-    fetch('/api/v1/skills?limit=50')
-      .then((r) => r.json())
-      .then((data) => setSkills(data.skills || []))
-      .catch(() => setSkills([]))
-      .finally(() => setSkillsLoading(false));
   }, [user, loading, router]);
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-black pt-14 flex items-center justify-center">
+    <div className="min-h-screen bg-theme pt-14 flex items-center justify-center">
         <div className="flex items-center gap-3 text-zinc-500">
           <span className="material-symbols-outlined animate-spin text-lg">hourglass_top</span>
           <span className="text-sm">加载中...</span>
@@ -36,11 +26,18 @@ export default function ProfilePage() {
     );
   }
 
+  const links = [
+    { href: '/history', icon: 'folder_special', label: '历史库', desc: '查看和管理所有生成的 Skill' },
+    { href: '/', icon: 'bolt', label: '生成 Skill', desc: '输入领域描述，开始铸造' },
+    { href: '/docs', icon: 'menu_book', label: '使用文档', desc: '了解 SkillForge 的功能和用法' },
+    { href: '/community', icon: 'forum', label: '社区', desc: '交流 skill 使用心得和技巧' },
+  ];
+
   return (
-    <div className="min-h-screen bg-black pt-14">
-      <div className="max-w-5xl mx-auto px-6 py-12">
+    <div className="min-h-screen bg-theme pt-14">
+      <div className="max-w-2xl mx-auto px-6 py-12 space-y-10">
         {/* Profile Header */}
-        <div className="flex items-center gap-6 mb-12 animate-fadeInUp">
+        <div className="flex items-center gap-6 animate-fadeInUp">
           <div className="w-16 h-16 rounded-full bg-[#FF5C00]/20 border-2 border-[#FF5C00]/30 flex items-center justify-center shrink-0">
             <span className="text-2xl font-display font-bold text-[#FF5C00]">
               {user.username.charAt(0).toUpperCase()}
@@ -55,42 +52,72 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Skills Section */}
-        <div className="mb-6 animate-fadeInUp stagger-1">
-          <h2 className="font-display text-lg text-white font-bold mb-2">我的 Skill</h2>
-          <p className="text-zinc-500 text-sm">共生成 {skills.length} 个 skill</p>
+        <div className="h-px bg-zinc-900" />
+
+        {/* Quick Links */}
+        <div className="space-y-3">
+          <h2 className="font-display text-sm text-zinc-400 uppercase tracking-widest font-bold">快捷入口</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {links.map((link) => (
+              <button
+                key={link.href}
+                onClick={() => router.push(link.href)}
+                className="group bg-[#080808] border border-zinc-900 rounded-xl p-4 text-left hover:border-zinc-700 hover:-translate-y-0.5 transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-9 h-9 rounded-lg bg-[#FF5C00]/10 border border-[#FF5C00]/20 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[#FF5C00] text-sm">{link.icon}</span>
+                  </div>
+                  <h3 className="text-white text-sm font-bold group-hover:text-[#FF5C00] transition-colors">{link.label}</h3>
+                </div>
+                <p className="text-zinc-500 text-xs pl-12">{link.desc}</p>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {skillsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-zinc-950/50 border border-zinc-900 rounded-lg p-6 animate-pulse">
-                <div className="h-4 bg-zinc-900 rounded w-2/3 mb-4" />
-                <div className="h-3 bg-zinc-900 rounded w-1/2 mb-3" />
-                <div className="h-3 bg-zinc-900 rounded w-full" />
+        <div className="h-px bg-zinc-900" />
+
+        {/* Account Actions */}
+        <div className="space-y-3">
+          <h2 className="font-display text-sm text-zinc-400 uppercase tracking-widest font-bold">账户</h2>
+          <div className="bg-[#080808] border border-zinc-900 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-zinc-500 text-sm">person</span>
+                <span className="text-sm text-zinc-300">用户名</span>
               </div>
-            ))}
-          </div>
-        ) : skills.length === 0 ? (
-          <div className="text-center py-16 border border-dashed border-zinc-900 rounded-xl animate-fadeInUp stagger-2">
-            <span className="material-symbols-outlined text-4xl text-zinc-800 mb-4 block">auto_awesome</span>
-            <p className="text-zinc-500 mb-2">还没有生成过 skill</p>
-            <button
-              onClick={() => router.push('/')}
-              className="bg-[#FF5C00] text-white px-4 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition"
-            >
-              开始生成
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {skills.map((skill, i) => (
-              <div key={skill.id} className="animate-fadeInUp" style={{ animationDelay: `${(i % 6) * 60}ms` }}>
-                <SkillCard skill={skill} variant="compact" />
+              <span className="text-sm text-white font-medium">{user.username}</span>
+            </div>
+            <div className="h-px bg-zinc-900" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-zinc-500 text-sm">email</span>
+                <span className="text-sm text-zinc-300">邮箱</span>
               </div>
-            ))}
+              <span className="text-sm text-zinc-400">{user.email}</span>
+            </div>
+            <div className="h-px bg-zinc-900" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-zinc-500 text-sm">calendar_month</span>
+                <span className="text-sm text-zinc-300">注册时间</span>
+              </div>
+              <span className="text-sm text-zinc-400">
+                {new Date(user.created_at).toLocaleDateString('zh-CN')}
+              </span>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Logout */}
+        <button
+          onClick={logout}
+          className="w-full py-3 rounded-xl border border-red-900/50 text-red-400 text-sm font-bold hover:bg-red-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined text-sm">logout</span>
+          退出登录
+        </button>
       </div>
     </div>
   );

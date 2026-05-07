@@ -173,7 +173,7 @@ export default function HistoryPage() {
       : { text: '搜索策划', class: 'bg-blue-500/10 text-blue-400 border border-blue-500/20' };
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-theme">
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Stats Header */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -272,21 +272,7 @@ export default function HistoryPage() {
                     </span>
                   </div>
                   <button
-                    onClick={() => {
-                      const name = prompt('输入收藏夹名称：');
-                      if (name && name.trim()) {
-                        fetch('/api/v1/collections', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ name: name.trim() }),
-                        })
-                          .then(r => r.json())
-                          .then(data => {
-                            setCollections(prev => [{ id: data.id, user_id: '', name: name.trim(), skill_count: 0, skill_ids: [], created_at: '' }, ...prev]);
-                          })
-                          .catch(() => alert('创建失败'));
-                      }
-                    }}
+                    onClick={() => setShowBookmarkFilter(true)}
                     className="w-8 h-8 flex items-center justify-center bg-zinc-900 border border-zinc-800 rounded text-zinc-400 hover:text-[#FF5C00] hover:border-[#FF5C00]/50 transition-all text-sm"
                     title="新建收藏夹"
                   >

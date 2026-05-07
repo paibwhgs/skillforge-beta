@@ -141,7 +141,7 @@ export default function DocsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-theme">
       <div className="max-w-7xl mx-auto flex">
         {/* Desktop Sidebar */}
         <aside className="hidden md:block w-56 shrink-0 relative">
@@ -348,9 +348,9 @@ export default function DocsPage() {
                 <FormatCard icon="markdown" title="Markdown" accent="#3b82f6">
                   纯 Markdown 格式，通用性强。不包含 frontmatter，可导入任何支持 Markdown 的工具、平台或文档系统。
                 </FormatCard>
-                <FormatCard icon="inventory_2" title="包格式" accent="#8b5cf6">
-                  多文件捆绑包，包含主文档、参考来源和元数据。适合需要离线存档或分发的场景，解压后可直接使用。
-                </FormatCard>
+                <FormatCard icon="inventory_2" title="OpenCLAW 格式" accent="#8b5cf6">
+                   与 Markdown 格式相同，但文件命名和元数据按 OpenCLAW 规范组织，兼容 OpenCLAW 工具链。输出为单文件 Markdown。
+                 </FormatCard>
               </div>
             </section>
 

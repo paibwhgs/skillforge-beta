@@ -2,10 +2,12 @@
 
 import { useAuth } from './AuthProvider';
 import { usePathname } from 'next/navigation';
+import { useTheme } from './ThemeProvider';
 
 export function Header() {
   const { user, loading, logout } = useAuth();
   const pathname = usePathname();
+  const { theme, toggle } = useTheme();
 
   const isActive = (path: string) => pathname === path;
 
@@ -57,7 +59,17 @@ export function Header() {
             文档
           </a>
         </nav>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggle}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-all active:scale-90"
+            title={theme === 'dark' ? '切换日间模式' : '切换夜间模式'}
+          >
+            <span className="material-symbols-outlined text-sm">
+              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+            </span>
+          </button>
           {loading ? (
             <span className="w-8 h-8 rounded-full bg-zinc-800 animate-pulse" />
           ) : user ? (

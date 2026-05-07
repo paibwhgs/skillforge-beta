@@ -6,14 +6,15 @@ const navItems = [
   { href: '/', icon: 'rss_feed', label: '首页' },
   { href: '/history', icon: 'folder_special', label: '库' },
   { href: '/community', icon: 'forum', label: '社区' },
-  { href: '/profile', icon: 'account_circle', label: '个人中心' },
+  { href: '/docs', icon: 'menu_book', label: '文档' },
+  { href: '/profile', icon: 'account_circle', label: '我的' },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 w-full z-50 md:hidden bg-black/90 backdrop-blur-xl border-t border-zinc-800 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+    <nav className="fixed bottom-0 w-full z-50 md:hidden bg-theme-header-bg backdrop-blur-xl border-t border-theme-light shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => {
           const isActive = item.href !== '#' && pathname.startsWith(item.href);

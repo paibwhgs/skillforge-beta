@@ -45,8 +45,12 @@ yarn-error.log*
 # project archives
 *.tar.gz
 
+# sisyphus workspace
+.sisyphus/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
 .vercel
+screenshots/

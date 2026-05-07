@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { initDB, insertSkill, insertSources, extractScoreFromContent, stripScoreFromContent } from '@/lib/db';
 import { multiSearch } from '@/lib/search';
-import { curateStream } from '@/lib/curator';
+import { curateStream, validateDomain } from '@/lib/curator';
 import { formatSkill, extractTitle } from '@/lib/formatter';
 import { getUserId } from '@/lib/auth';
 import type { GenerateRequest } from '@/types';
@@ -50,6 +50,15 @@ export async function POST(request: NextRequest) {
       const write = (event: string, data: unknown) => writeEvent(controller, encoder, event, data);
 
       try {
+        // Phase 0: Validate input
+        write('log', { type: 'check', text: '验证输入...', ts: now() });
+        const validation = await validateDomain(domain);
+        if (!validation.valid) {
+          write('error', { error: validation.reason || '输入无效，请描述一个具体的技术领域' });
+          return;
+        }
+        write('log', { type: 'check', text: '输入验证通过', ts: now() });
+
         let results: any[] = [];
         let level: 'rich' | 'sparse' | 'none' = 'none';
 

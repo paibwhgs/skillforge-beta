@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initDB, insertSkill, insertSources, extractScoreFromContent, stripScoreFromContent } from '@/lib/db';
 import { multiSearch } from '@/lib/search';
-import { curate, directGenerate } from '@/lib/curator';
+import { curate, directGenerate, validateDomain } from '@/lib/curator';
 import { formatSkill, extractTitle } from '@/lib/formatter';
 import { getUserId } from '@/lib/auth';
 import type { GenerateRequest } from '@/types';
@@ -33,6 +33,12 @@ export async function POST(request: NextRequest) {
   const mode = body.mode || 'auto';
   const engine = body.engine;
   const model = body.model;
+
+  // Validate input
+  const validation = await validateDomain(domain);
+  if (!validation.valid) {
+    return NextResponse.json({ error: validation.reason || '输入无效，请描述一个具体的技术领域' }, { status: 400 });
+  }
 
   // Phase 1: Search (skip in direct mode)
   let results: any[] = [];

@@ -4,6 +4,7 @@ import { Header } from '@/components/Header';
 import { BottomNavWrapper } from '@/components/BottomNavWrapper';
 import { PageTransition } from '@/components/PageTransition';
 import { PwaRegister } from '@/components/PwaRegister';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -31,25 +32,27 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-black text-[#e3e2e2] font-body">
         <AuthProvider>
-          <Header />
-          <main className="flex-1 w-full pt-14 pb-16 md:pb-0"><PageTransition>{children}</PageTransition></main>
-          <PwaRegister />
-          <footer className="border-t border-zinc-900 bg-black text-zinc-600 text-xs shrink-0">
-            <div className="max-w-7xl mx-auto px-8 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-4">
-                <span className="font-display text-zinc-400">SkillForge v1.0.4-alpha</span>
-                <span className="w-1 h-1 bg-zinc-800 rounded-full" />
-                <span className="text-zinc-500">内容由 AI 生成，仅供学习参考</span>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  系统运行正常
+          <ThemeProvider>
+            <Header />
+            <main className="flex-1 w-full pt-14 pb-16 md:pb-0"><PageTransition>{children}</PageTransition></main>
+            <PwaRegister />
+            <footer className="border-t border-zinc-900 bg-black text-zinc-600 text-xs shrink-0">
+              <div className="max-w-7xl mx-auto px-8 py-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-4">
+                  <span className="font-display text-zinc-400">SkillForge v1.0.4-alpha</span>
+                  <span className="w-1 h-1 bg-zinc-800 rounded-full" />
+                  <span className="text-zinc-500">内容由 AI 生成，仅供学习参考</span>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    系统运行正常
+                  </div>
                 </div>
               </div>
-            </div>
-          </footer>
-          <BottomNavWrapper />
+            </footer>
+            <BottomNavWrapper />
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>
