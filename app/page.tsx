@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { SearchInput } from '@/components/SearchInput';
 import { DEFAULT_MODEL } from '@/types';
-import type { SkillRecord } from '@/types';
+import type { SkillRecord, UploadedDocument } from '@/types';
 
 let recentSkillsCache: { data: SkillRecord[]; ts: number } | null = null;
 
@@ -45,6 +45,7 @@ export default function Home() {
   const [searchEnabled, setSearchEnabled] = useState(true);
   const [engine, setEngine] = useState(DEFAULT_MODEL.engine);
   const [model, setModel] = useState(DEFAULT_MODEL.model);
+  const [documents, setDocuments] = useState<UploadedDocument[]>([]);
   const [recentSkills, setRecentSkills] = useState<SkillRecord[]>(() => {
     if (recentSkillsCache) return recentSkillsCache.data;
     return [];
@@ -94,6 +95,8 @@ export default function Home() {
             engine={engine}
             model={model}
             onModelChange={(e, m) => { setEngine(e); setModel(m); }}
+            documents={documents}
+            onDocumentsChange={setDocuments}
           />
         </div>
       </section>

@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
   const mode = body.mode || 'auto';
   const engine = body.engine;
   const model = body.model;
+  const documents = body.documents;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
@@ -85,11 +86,11 @@ export async function POST(request: NextRequest) {
         let tokenCount = 0;
         if (mode === 'auto' && level === 'none') {
           const { curate } = await import('@/lib/curator');
-          rawContent = await curate(domain, results, level, format, engine, model);
+          rawContent = await curate(domain, results, level, format, engine, model, documents);
           write('token', { text: rawContent });
           console.error(`[stream] fallback seed, rawContent length=${rawContent.length}`);
         } else {
-          for await (const token of curateStream(domain, results, level, format, engine, model)) {
+          for await (const token of curateStream(domain, results, level, format, engine, model, documents)) {
             rawContent += token;
             tokenCount++;
             write('token', { text: token });

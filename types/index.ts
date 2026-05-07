@@ -10,6 +10,12 @@ export interface SkillFile {
   content: string;
 }
 
+export interface UploadedDocument {
+  name: string;
+  content: string;  // extracted text
+  type: string;     // mime type
+}
+
 export interface GenerateRequest {
   domain: string;
   format?: 'claude' | 'openclaw' | 'markdown';
@@ -17,6 +23,7 @@ export interface GenerateRequest {
   mode?: 'auto' | 'direct';
   engine?: string;
   model?: string;
+  documents?: UploadedDocument[];
 }
 
 export interface GenerateResponse {

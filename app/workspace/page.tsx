@@ -4,7 +4,7 @@ import { Suspense, useEffect, useRef, useState, useCallback, useMemo } from 'rea
 import { useSearchParams, useRouter } from 'next/navigation';
 import { WorkspaceLog } from '@/components/WorkspaceLog';
 import { DEFAULT_MODEL, MODEL_OPTIONS } from '@/types';
-import type { SkillFile } from '@/types';
+import type { SkillFile, UploadedDocument } from '@/types';
 
 // --- Types ---
 
@@ -119,11 +119,24 @@ function WorkspaceContent() {
     let accumulatedContent = '';
 
     const connect = async () => {
+      // Read uploaded documents from localStorage (set by SearchInput)
+      let docsToSend: UploadedDocument[] = [];
+      try {
+        const stored = localStorage.getItem('skillforge-upload-docs');
+        if (stored) {
+          docsToSend = JSON.parse(stored);
+          localStorage.removeItem('skillforge-upload-docs');
+        }
+      } catch {}
+
       try {
         const res = await fetch('/api/v1/generate/stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ domain, format, depth, mode, engine, model }),
+          body: JSON.stringify({
+            domain, format, depth, mode, engine, model,
+            documents: docsToSend.length > 0 ? docsToSend : undefined,
+          }),
           signal: abortController.signal,
         });
 
@@ -253,6 +266,16 @@ function WorkspaceContent() {
     );
     setActiveModelIdx(0);
 
+    // Read uploaded documents from localStorage (set by SearchInput)
+    let docsToSend: UploadedDocument[] = [];
+    try {
+      const stored = localStorage.getItem('skillforge-upload-docs');
+      if (stored) {
+        docsToSend = JSON.parse(stored);
+        localStorage.removeItem('skillforge-upload-docs');
+      }
+    } catch {}
+
     const connectModel = async (
       spec: { engine: string; model: string; label: string },
       idx: number,
@@ -271,6 +294,7 @@ function WorkspaceContent() {
             mode,
             engine: spec.engine,
             model: spec.model,
+            documents: docsToSend.length > 0 ? docsToSend : undefined,
           }),
           signal: controller.signal,
         });

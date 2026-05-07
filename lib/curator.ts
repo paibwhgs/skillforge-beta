@@ -1,6 +1,6 @@
 import { chat, chatOpenCodeGo } from './llm';
 import { chatStream, chatStreamOpenCodeGo } from './llm-stream';
-import type { SearchResult } from '@/types';
+import type { SearchResult, UploadedDocument } from '@/types';
 import { DEFAULT_MODEL } from '@/types';
 import { seeds } from '@/seeds/skills';
 
@@ -41,15 +41,27 @@ Every generated skill MUST contain:
 1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code). The description is the PRIMARY trigger mechanism — include both WHAT the skill does AND specific contexts/tell-tale phrases that should trigger it. Make it slightly "pushy" to avoid undertriggering. Optionally add compatibilitiy field if the skill depends on specific tools or runtimes.
 2. **When to use**: Specific scenarios and user phrases that trigger this skill
 3. **Core Rules**: Clear, actionable, verifiable instructions. Explain the reasoning behind each rule.
-4. **Tool & Ecosystem Guide**: Recommended libraries, frameworks, tools with brief comparisons (use tables when comparing 3+ options)
-5. **Code Examples**: At least 2-3 concrete before/after or pattern examples adapted from search results, with code blocks. Use "Input → Output" format where applicable.
-6. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns
+4. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns
 
-## Output format (Anthropic official spec)
+## SKILL.md MUST be concise (under 150 lines)
+SKILL.md is the trigger document — Claude loads it into context whenever the skill activates. Keep it lean:
+- **Frontmatter** + **When to use** + **Core Rules** + **Pitfalls** only
+- Do NOT embed long code examples, comparison tables, or deep reference material in SKILL.md
+- Push those to bundled files (references/, scripts/)
+
+## Bundled files for everything else
+Put bulkier content in separate files:
+- **Code Examples** (3+ examples) -> references/examples.md
+- **Tool comparisons** (tables) -> references/tools.md
+- **Configuration templates** -> assets/template.yaml
+- **Automation scripts** -> scripts/xxx.py
+
+## Output format
 ---
 name: skill-name-here
 description: "Trigger description — include keywords and scenarios that should activate this skill"
 ---
+
 # Skill Title
 
 ## When to use
@@ -60,48 +72,38 @@ description: "Trigger description — include keywords and scenarios that should
 1. Rule with clear action — explain WHY this matters
 2. Rule with clear action — explain WHY this matters
 
-## Tool & Ecosystem Guide
-| Tool | Purpose | Best for | Notes |
-|------|---------|----------|-------|
-| ...  | ...     | ...      | ...   |
-
-## Code Examples
-### Example 1: descriptive title
-\`\`\`language
-// code here
-\`\`\`
-
-**Why this works**: brief explanation
-
 ## Common Pitfalls & Boundaries
 - Don't do X
 - Stop when Y
 
-## References (if the domain is broad)
-- Framework A guide → see references/framework-a.md
-- Advanced patterns → see references/advanced.md
+To bundle additional files, output them AFTER the main SKILL.md using:
 
-## Bundled files (optional, use when it adds value)
-If the domain has repetitive tasks (data processing, file manipulation, API calls), bundle a ready-to-use script. If it spans multiple sub-topics, include reference docs for each variant. Use your judgment — simple skills may only need the SKILL.md above.
-
-To bundle additional files, output them after the main SKILL.md using this marker format:
-
-<!-- file:scripts/analyze.py -->
-\`\`\`python
-print("hello")
+<!-- file:references/examples.md -->
+\`\`\`markdown
+# Examples
+...
 \`\`\`
 <!-- endfile -->
 
-<!-- file:references/deep-dive.md -->
-# Deep dive content
+<!-- file:scripts/analyze.py -->
+\`\`\`python
 ...
+\`\`\`
 <!-- endfile -->
 
-The main SKILL.md content comes FIRST (before any <!-- file: --> markers), then each additional file is wrapped in <!-- file:path --> ... <!-- endfile --> tags. Do NOT bundle files unless they genuinely add value. A clean single SKILL.md is better than forced multi-file output.`;
+The main SKILL.md comes FIRST (before any <!-- file: --> markers). If the domain is simple and doesn't need extra files, output only SKILL.md — a clean concise file is better than unnecessary bundling.`;
 
 const CURATION_SYSTEM_OPENCLAW = CURATION_SYSTEM;
 
-function buildCuratorPrompt(domain: string, results: SearchResult[]): string {
+function buildDocumentsBlock(documents: UploadedDocument[]): string {
+  if (!documents || documents.length === 0) return '';
+  const docsBlock = documents
+    .map((doc) => `[Document: ${doc.name}]\n${doc.content.slice(0, 2000)}`)
+    .join('\n\n');
+  return `\n\n## User Documents\nThe user has provided the following documents for context:\n\n${docsBlock}`;
+}
+
+function buildCuratorPrompt(domain: string, results: SearchResult[], documents?: UploadedDocument[]): string {
   const resultsBlock = results
     .map(
       (r, i) =>
@@ -110,7 +112,7 @@ function buildCuratorPrompt(domain: string, results: SearchResult[]): string {
     .join('\n\n');
 
   return `## User domain
-${domain}
+${domain}${buildDocumentsBlock(documents || [])}
 
 ## Search results
 ${resultsBlock}
@@ -141,11 +143,16 @@ Every generated skill MUST contain:
 1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code). The description is the PRIMARY trigger mechanism — include both WHAT the skill does AND specific contexts/tell-tale phrases that should trigger it. Make it slightly "pushy" to avoid undertriggering.
 2. **When to use**: Specific scenarios and user phrases that trigger this skill
 3. **Core Rules**: Clear, actionable, verifiable instructions. Explain the reasoning behind each rule.
-4. **Tool & Ecosystem Guide**: Recommended libraries, frameworks, tools with brief comparisons (use tables when comparing 3+ options)
-5. **Code Examples**: At least 2-3 concrete before/after or pattern examples, with code blocks. Use "Input → Output" format where applicable.
-6. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns
+4. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns
 
-## Output format (Anthropic official spec)
+## SKILL.md MUST be concise (under 150 lines)
+SKILL.md is the trigger document. Keep it lean — frontmatter, when-to-use, core rules, pitfalls only.
+Do NOT embed long code examples or comparison tables in SKILL.md. Push those to bundled files.
+
+## Bundled files
+Put code examples in references/examples.md, tool comparisons in references/tools.md, scripts in scripts/.
+
+## Output format
 ---
 name: skill-name-here
 description: "Trigger description — include keywords and scenarios that should activate this skill"
@@ -161,22 +168,11 @@ description: "Trigger description — include keywords and scenarios that should
 1. Rule with clear action — explain WHY this matters
 2. Rule with clear action — explain WHY this matters
 
-## Tool & Ecosystem Guide
-| Tool | Purpose | Best for | Notes |
-|------|---------|----------|-------|
-| ...  | ...     | ...      | ...   |
-
-## Code Examples
-### Example 1: descriptive title
-\`\`\`language
-// code here
-\`\`\`
-
-**Why this works**: brief explanation
-
 ## Common Pitfalls & Boundaries
 - Don't do X
 - Stop when Y
+
+Additional files go after SKILL.md using <!-- file:path --> markers. Only bundle if it adds value.
 
 **Note**: This skill was generated from AI knowledge without web search. For the most up-to-date information, consider enabling web search.`;
 
@@ -295,11 +291,13 @@ export async function directGenerate(
   format: string = 'claude',
   engine?: string,
   model?: string,
+  documents?: UploadedDocument[],
 ): Promise<string> {
   const system = format === 'openclaw' ? DIRECT_SYSTEM_OPENCLAW : DIRECT_SYSTEM;
+  const docsBlock = buildDocumentsBlock(documents || []);
   return callLLM(
     system,
-    `Generate a comprehensive skill file for the domain: "${domain}".
+    `Generate a comprehensive skill file for the domain: "${domain}".${docsBlock}
 
 Draw from your training knowledge to create the most useful, accurate skill possible. Include practical examples and specific rules that someone working in this domain would find valuable.
 
@@ -315,16 +313,18 @@ export async function curate(
   format: string = 'claude',
   engine?: string,
   model?: string,
+  documents?: UploadedDocument[],
 ): Promise<string> {
   const block = results
     .map((r) => `- ${r.title} (${r.url}): ${r.content.slice(0, 300)}`)
     .join('\n');
 
   const systemPrompt = format === 'openclaw' ? CURATION_SYSTEM_OPENCLAW : CURATION_SYSTEM;
+  const docsBlock = buildDocumentsBlock(documents || []);
 
   // L1: Rich results — normal curation
   if (level === 'rich') {
-    return callLLM(systemPrompt, buildCuratorPrompt(domain, results), engine, model, 0.7);
+    return callLLM(systemPrompt, buildCuratorPrompt(domain, results, documents), engine, model, 0.7);
   }
 
   // L2: Sparse results — mix search + AI knowledge
@@ -332,7 +332,7 @@ export async function curate(
     return callLLM(
       systemPrompt,
       `## User domain
-${domain}
+${domain}${docsBlock}
 
 ## Search results (limited — only ${results.length} found)
 ${block || '(no useful results)'}
@@ -354,15 +354,17 @@ export async function* curateStream(
   format: string = 'claude',
   engine?: string,
   model?: string,
+  documents?: UploadedDocument[],
 ): AsyncGenerator<string> {
   const block = results
     .map((r) => `- ${r.title} (${r.url}): ${r.content.slice(0, 300)}`)
     .join('\n');
 
   const systemPrompt = format === 'openclaw' ? CURATION_SYSTEM_OPENCLAW : CURATION_SYSTEM;
+  const docsBlock = buildDocumentsBlock(documents || []);
 
   if (level === 'rich') {
-    for await (const token of callLLMStream(systemPrompt, buildCuratorPrompt(domain, results), engine, model, 0.7)) {
+    for await (const token of callLLMStream(systemPrompt, buildCuratorPrompt(domain, results, documents), engine, model, 0.7)) {
       yield token;
     }
     return;
@@ -372,7 +374,7 @@ export async function* curateStream(
     for await (const token of callLLMStream(
       systemPrompt,
       `## User domain
-${domain}
+${domain}${docsBlock}
 
 ## Search results (limited — only ${results.length} found)
 ${block || '(no useful results)'}

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { MODEL_OPTIONS } from '@/types';
+import { MODEL_OPTIONS, type UploadedDocument } from '@/types';
 
 interface SearchInputProps {
   domain: string;
@@ -16,6 +16,8 @@ interface SearchInputProps {
   engine: string;
   model: string;
   onModelChange: (engine: string, model: string) => void;
+  documents: UploadedDocument[];
+  onDocumentsChange: (docs: UploadedDocument[]) => void;
 }
 
 export function SearchInput({
@@ -30,6 +32,8 @@ export function SearchInput({
   engine,
   model,
   onModelChange,
+  documents,
+  onDocumentsChange,
 }: SearchInputProps) {
   const router = useRouter();
   const [multiModel, setMultiModel] = useState(false);
@@ -37,6 +41,75 @@ export function SearchInput({
     { label: string; engine: string; model: string }[]
   >([]);
   const [validationError, setValidationError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function processFile(file: File): Promise<UploadedDocument | null> {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    try {
+      if (ext === 'txt' || ext === 'md') {
+        const content = await file.text();
+        return { name: file.name, content, type: file.type || 'text/plain' };
+      } else if (ext === 'pdf') {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/v1/parse-document', { method: 'POST', body: formData });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'PDF 解析失败');
+        }
+        return await res.json();
+      }
+      return null;
+    } catch (err: any) {
+      setValidationError(err.message);
+      return null;
+    }
+  }
+
+  async function handleFiles(files: FileList) {
+    setUploading(true);
+    const newDocs: UploadedDocument[] = [];
+    for (const file of Array.from(files)) {
+      if (file.size > 10 * 1024 * 1024) {
+        setValidationError(`文件 ${file.name} 超过 10MB 限制`);
+        continue;
+      }
+      const doc = await processFile(file);
+      if (doc) newDocs.push(doc);
+    }
+    if (newDocs.length > 0) {
+      onDocumentsChange([...documents, ...newDocs]);
+    }
+    setUploading(false);
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFiles(files);
+    }
+    e.target.value = '';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
 
   function validateInput(input: string): string {
     const trimmed = input.trim();
@@ -62,6 +135,13 @@ export function SearchInput({
     if (err) { setValidationError(err); return; }
     setValidationError('');
     const mode = searchEnabled ? 'auto' : 'direct';
+
+    // Store documents in localStorage for workspace page
+    if (documents.length > 0) {
+      localStorage.setItem('skillforge-upload-docs', JSON.stringify(documents));
+    } else {
+      localStorage.removeItem('skillforge-upload-docs');
+    }
 
     if (multiModel && selectedModels.length >= 2) {
       const modelsStr = selectedModels
@@ -107,6 +187,66 @@ export function SearchInput({
               <div className="flex items-center gap-1.5 mt-1 text-amber-400 text-[10px]">
                 <span className="material-symbols-outlined text-xs">error_outline</span>
                 <span>{validationError}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Document Upload Area */}
+        {documents.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-4 py-2 border-b border-zinc-900/50">
+            {documents.map((doc, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-[10px] text-zinc-300 group"
+              >
+                <span className="material-symbols-outlined text-xs text-[#FF5C00]">description</span>
+                <span className="max-w-[100px] truncate">{doc.name}</span>
+                <button
+                  onClick={() => onDocumentsChange(documents.filter((_, j) => j !== i))}
+                  className="text-zinc-600 hover:text-red-400 transition-colors ml-0.5"
+                >
+                  <span className="material-symbols-outlined text-xs">close</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div
+          className={`px-4 py-3 border-b border-zinc-900/50 cursor-pointer transition-colors ${
+            dragOver ? 'bg-[#FF5C00]/5' : ''
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".md,.txt,.pdf"
+            multiple
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <div
+            className={`border-2 border-dashed rounded-lg p-3 text-center transition-colors ${
+              dragOver
+                ? 'border-[#FF5C00] bg-[#FF5C00]/10'
+                : 'border-zinc-800 hover:border-zinc-600'
+            }`}
+          >
+            {uploading ? (
+              <div className="flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-zinc-500 text-base animate-spin">sync</span>
+                <span className="text-[10px] text-zinc-500">上传中...</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-zinc-600 text-base">upload_file</span>
+                <span className="text-[10px] text-zinc-600">
+                  拖拽或点击上传 <span className="text-zinc-500">.md / .txt / .pdf</span>
+                </span>
               </div>
             )}
           </div>

@@ -16,29 +16,39 @@ export async function tavilySearch(
   query: string,
   depth: 'basic' | 'advanced' = 'basic',
 ): Promise<RawResult[]> {
-  const apiKey = process.env.TAVILY_API_KEY;
-  if (!apiKey) return [];
+  const primaryKey = process.env.TAVILY_API_KEY;
+  if (!primaryKey) return [];
 
-  const res = await fetch(TAVILY_BASE, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      api_key: apiKey,
-      query,
-      search_depth: depth,
-      max_results: depth === 'advanced' ? 10 : 5,
-      include_answer: false,
-    }),
-  });
+  // Try primary key first, fall back to TAVILY_API_KEY_2 if quota exhausted
+  const keys = [primaryKey, process.env.TAVILY_API_KEY_2].filter(Boolean) as string[];
 
-  if (!res.ok) return [];
-  const json = await res.json();
-  return (json.results || []).map((r: any) => ({
-    title: r.title || '',
-    url: r.url || '',
-    content: r.content || '',
-    score: r.score || 0,
-  }));
+  for (const apiKey of keys) {
+    const res = await fetch(TAVILY_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: apiKey,
+        query,
+        search_depth: depth,
+        max_results: depth === 'advanced' ? 10 : 5,
+        include_answer: false,
+      }),
+    });
+
+    if (res.ok) {
+      const json = await res.json();
+      return (json.results || []).map((r: any) => ({
+        title: r.title || '',
+        url: r.url || '',
+        content: r.content || '',
+        score: r.score || 0,
+      }));
+    }
+    // If 429 or 403 (quota), try next key; otherwise return empty
+    if (res.status !== 429 && res.status !== 403) return [];
+  }
+
+  return [];
 }
 
 // ── Dashscope / 百炼 ────────────────────────────────

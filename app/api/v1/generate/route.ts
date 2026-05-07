@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
   const mode = body.mode || 'auto';
   const engine = body.engine;
   const model = body.model;
+  const documents = body.documents;
 
   // Validate input
   const validation = await validateDomain(domain);
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
   let level: 'rich' | 'sparse' | 'none' = 'none';
 
   if (mode === 'direct') {
-    const rawContent = await directGenerate(domain, format, engine, model);
+    const rawContent = await directGenerate(domain, format, engine, model, documents);
     if (!rawContent.trim()) {
       return NextResponse.json({ error: 'AI 返回了空内容，请重试。如果持续失败，可尝试切换模型或换一个领域。' }, { status: 500 });
     }
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
   level = searchResults.level;
 
   // Phase 2: Curate
-  const rawContent = await curate(domain, results, level, format, engine, model);
+  const rawContent = await curate(domain, results, level, format, engine, model, documents);
 
   if (!rawContent.trim()) {
     return NextResponse.json({ error: 'AI 返回了空内容，请重试。如果持续失败，可尝试切换模型或换一个领域。' }, { status: 500 });
