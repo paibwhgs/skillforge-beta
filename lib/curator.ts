@@ -38,19 +38,18 @@ If the domain spans multiple frameworks/variants (e.g., AWS + GCP + Azure for cl
 
 ## Required skill structure
 Every generated skill MUST contain:
-1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code). The description is the PRIMARY trigger mechanism — include both WHAT the skill does AND specific contexts/tell-tale phrases that should trigger it. Make it slightly "pushy" to avoid undertriggering. Example: "Guide for building dashboards. Use this whenever the user mentions dashboards, data visualization, internal metrics, or wants to display company data — even if they don't explicitly ask for a 'dashboard'."
+1. **YAML Frontmatter**: name (kebab-case), description (English, for Claude Code). The description is the PRIMARY trigger mechanism — include both WHAT the skill does AND specific contexts/tell-tale phrases that should trigger it. Make it slightly "pushy" to avoid undertriggering. Optionally add compatibilitiy field if the skill depends on specific tools or runtimes.
 2. **When to use**: Specific scenarios and user phrases that trigger this skill
 3. **Core Rules**: Clear, actionable, verifiable instructions. Explain the reasoning behind each rule.
 4. **Tool & Ecosystem Guide**: Recommended libraries, frameworks, tools with brief comparisons (use tables when comparing 3+ options)
 5. **Code Examples**: At least 2-3 concrete before/after or pattern examples adapted from search results, with code blocks. Use "Input → Output" format where applicable.
 6. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns
 
-## Output format
+## Output format (Anthropic official spec)
 ---
 name: skill-name-here
-description: "One-line description of what this skill does and when to trigger it"
+description: "Trigger description — include keywords and scenarios that should activate this skill"
 ---
-
 # Skill Title
 
 ## When to use
@@ -146,10 +145,10 @@ Every generated skill MUST contain:
 5. **Code Examples**: At least 2-3 concrete before/after or pattern examples, with code blocks. Use "Input → Output" format where applicable.
 6. **Common Pitfalls & Boundaries**: What NOT to do, when to stop, known anti-patterns
 
-## Output format
+## Output format (Anthropic official spec)
 ---
 name: skill-name-here
-description: "One-line description of what this skill does and when to trigger it"
+description: "Trigger description — include keywords and scenarios that should activate this skill"
 ---
 
 # Skill Title

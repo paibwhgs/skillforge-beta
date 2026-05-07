@@ -51,7 +51,7 @@ export function SkillPreview({ skill }: Props) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${skill.title.replace(/\s+/g, '-').toLowerCase()}.md`;
+    a.download = 'SKILL.md';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -69,6 +69,9 @@ export function SkillPreview({ skill }: Props) {
     if (!skill.files || skill.files.length === 0) return;
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
+    // Root SKILL.md
+    zip.file('SKILL.md', content);
+    // Supporting files
     for (const f of skill.files) {
       zip.file(f.path, f.content);
     }
