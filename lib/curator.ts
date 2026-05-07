@@ -80,7 +80,25 @@ description: "One-line description of what this skill does and when to trigger i
 
 ## References (if the domain is broad)
 - Framework A guide → see references/framework-a.md
-- Advanced patterns → see references/advanced.md`;
+- Advanced patterns → see references/advanced.md
+
+## Bundled files (optional, use when it adds value)
+If the domain has repetitive tasks (data processing, file manipulation, API calls), bundle a ready-to-use script. If it spans multiple sub-topics, include reference docs for each variant. Use your judgment — simple skills may only need the SKILL.md above.
+
+To bundle additional files, output them after the main SKILL.md using this marker format:
+
+<!-- file:scripts/analyze.py -->
+\`\`\`python
+print("hello")
+\`\`\`
+<!-- endfile -->
+
+<!-- file:references/deep-dive.md -->
+# Deep dive content
+...
+<!-- endfile -->
+
+The main SKILL.md content comes FIRST (before any <!-- file: --> markers), then each additional file is wrapped in <!-- file:path --> ... <!-- endfile --> tags. Do NOT bundle files unless they genuinely add value. A clean single SKILL.md is better than forced multi-file output.`;
 
 const CURATION_SYSTEM_OPENCLAW = CURATION_SYSTEM;
 
@@ -370,6 +388,26 @@ Search results were sparse. Supplement with general AI knowledge for this domain
   }
 
   yield fallbackSeed(domain);
+}
+
+export function parseSkillOutput(content: string): { mainContent: string; files: { path: string; content: string }[] } {
+  const files: { path: string; content: string }[] = [];
+  const fileRegex = /<!--\s*file:\s*(.+?)\s*-->([\s\S]*?)<!--\s*endfile\s*-->/g;
+  let match;
+
+  while ((match = fileRegex.exec(content)) !== null) {
+    const path = match[1].trim();
+    const fileContent = match[2].trim();
+    if (path && fileContent) {
+      files.push({ path, content: fileContent });
+    }
+  }
+
+  // Main content is everything before the first <!-- file: --> marker
+  const firstFileIdx = content.indexOf('<!-- file:');
+  const mainContent = firstFileIdx >= 0 ? content.slice(0, firstFileIdx).trim() : content.trim();
+
+  return { mainContent, files };
 }
 
 export function fallbackSeed(domain: string): string {

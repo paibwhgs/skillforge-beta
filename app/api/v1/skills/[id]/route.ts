@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initDB, getSkill, getSkillSources, deleteSkill, updateSkillBookmark, getCommunityPostBySkillId } from '@/lib/db';
+import { initDB, getSkill, getSkillSources, getSkillFiles, deleteSkill, updateSkillBookmark, getCommunityPostBySkillId } from '@/lib/db';
 import type { SkillFile } from '@/types';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
   const sources = await getSkillSources(id);
-  const files: SkillFile[] = [];
+  const files = await getSkillFiles(id);
   const communityPost = await getCommunityPostBySkillId(id);
   const communityPostId = communityPost?.id || null;
   return NextResponse.json({ skill, sources, files, communityPostId });

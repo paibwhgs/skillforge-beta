@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
-import { initDB, insertSkill, insertSources, extractScoreFromContent, stripScoreFromContent } from '@/lib/db';
+import { initDB, insertSkill, insertSources, insertSkillFiles, extractScoreFromContent, stripScoreFromContent } from '@/lib/db';
 import { multiSearch } from '@/lib/search';
-import { curateStream, validateDomain } from '@/lib/curator';
+import { curateStream, validateDomain, parseSkillOutput } from '@/lib/curator';
 import { formatSkill, extractTitle } from '@/lib/formatter';
 import { getUserId } from '@/lib/auth';
 import type { GenerateRequest } from '@/types';
@@ -105,9 +105,10 @@ export async function POST(request: NextRequest) {
         write('log', { type: 'format', text: '格式化输出中...', ts: now() });
         const score = extractScoreFromContent(rawContent);
         const cleanedRaw = stripScoreFromContent(rawContent);
-        const content = formatSkill(cleanedRaw, format);
+        const { mainContent, files } = parseSkillOutput(cleanedRaw);
+        const content = formatSkill(mainContent, format);
         const title = extractTitle(content);
-        console.error(`[stream] content length=${content.length}, title="${title}", score=${score}`);
+        console.error(`[stream] content length=${content.length}, title="${title}", score=${score}, files=${files.length}`);
 
         // Save
         const userId = getUserId(request);
@@ -117,6 +118,12 @@ export async function POST(request: NextRequest) {
             id,
             results.map((r) => ({ title: r.title, url: r.url })),
           );
+        }
+        if (files.length > 0) {
+          await insertSkillFiles(id, files);
+          for (const f of files) {
+            write('file', { path: f.path, content: f.content });
+          }
         }
 
         // Done
@@ -128,7 +135,7 @@ export async function POST(request: NextRequest) {
             format,
             content,
             score,
-            files: undefined,
+            files: files.length > 0 ? files : undefined,
             sources: results.map((r) => ({ title: r.title, url: r.url })),
             sources_level: level,
             created_at: new Date().toISOString(),

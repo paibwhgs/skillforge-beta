@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initDB, insertSkill, insertSources, extractScoreFromContent, stripScoreFromContent } from '@/lib/db';
+import { initDB, insertSkill, insertSources, insertSkillFiles, extractScoreFromContent, stripScoreFromContent } from '@/lib/db';
 import { multiSearch } from '@/lib/search';
-import { curate, directGenerate, validateDomain } from '@/lib/curator';
+import { curate, directGenerate, validateDomain, parseSkillOutput } from '@/lib/curator';
 import { formatSkill, extractTitle } from '@/lib/formatter';
 import { getUserId } from '@/lib/auth';
 import type { GenerateRequest } from '@/types';
@@ -51,10 +51,14 @@ export async function POST(request: NextRequest) {
     }
     const score = extractScoreFromContent(rawContent);
     const cleanedRaw = stripScoreFromContent(rawContent);
-    const content = formatSkill(cleanedRaw, format);
+    const { mainContent, files } = parseSkillOutput(cleanedRaw);
+    const content = formatSkill(mainContent, format);
     const title = extractTitle(content);
     const userId = getUserId(request);
     const id = await insertSkill(title, domain, format, content, depth, userId || undefined, mode, score, engine, model);
+    if (files.length > 0) {
+      await insertSkillFiles(id, files);
+    }
 
     return NextResponse.json({
       success: true,
@@ -65,7 +69,7 @@ export async function POST(request: NextRequest) {
         format,
         content,
         score,
-        files: undefined,
+        files: files.length > 0 ? files : undefined,
         sources: [],
         sources_level: 'none' as const,
         created_at: new Date().toISOString(),
@@ -88,7 +92,8 @@ export async function POST(request: NextRequest) {
   // Phase 3: Format
   const score = extractScoreFromContent(rawContent);
   const cleanedRaw = stripScoreFromContent(rawContent);
-  const content = formatSkill(cleanedRaw, format);
+  const { mainContent, files } = parseSkillOutput(cleanedRaw);
+  const content = formatSkill(mainContent, format);
   const title = extractTitle(content);
 
   // Save to DB
@@ -98,6 +103,9 @@ export async function POST(request: NextRequest) {
     id,
     results.map((r) => ({ title: r.title, url: r.url })),
   );
+  if (files.length > 0) {
+    await insertSkillFiles(id, files);
+  }
 
   return NextResponse.json({
     success: true,
@@ -108,7 +116,7 @@ export async function POST(request: NextRequest) {
       format,
       content,
       score,
-      files: undefined,
+      files: files.length > 0 ? files : undefined,
       sources: results.map((r) => ({ title: r.title, url: r.url })),
       sources_level: level,
       created_at: new Date().toISOString(),
